@@ -15,8 +15,8 @@
  */
 
 #include <limits.h>
-#include <fermat/ga.h>
-#include <fermat/dbg.h>
+#include <svoboda/ga.h>
+#include <boruvka/dbg.h>
 
 int input[1000];
 int input_size;
@@ -26,11 +26,11 @@ int maxiter = 10000;
 int cycles = 10;
 FILE *flog;
 
-void result(fer_ga_t *ga, int c)
+void result(svo_ga_t *ga, int c)
 {
     int i, min, mini, *gt;
     void *indiv;
-    fer_real_t *ft, f;
+    bor_real_t *ft, f;
     FILE *fres;
     char fn[100];
 
@@ -40,18 +40,18 @@ void result(fer_ga_t *ga, int c)
     mini = -1;
     min = INT_MAX;
     for (i = 0; i < popsize; i++){
-        indiv = ferGAIndiv(ga, i);
-        ft    = ferGAIndivFitness(ga, indiv);
+        indiv = svoGAIndiv(ga, i);
+        ft    = svoGAIndivFitness(ga, indiv);
 
-        f = FER_ONE / ft[0];
+        f = BOR_ONE / ft[0];
         if (f < min){
             min = f;
             mini = i;
         }
     }
 
-    indiv = ferGAIndiv(ga, mini);
-    gt    = (int *)ferGAIndivGenotype(ga, indiv);
+    indiv = svoGAIndiv(ga, mini);
+    gt    = (int *)svoGAIndivGenotype(ga, indiv);
     for (i = 0; i < input_size; i++){
         fprintf(fres, "%d %d\n", input[i], gt[i]);
     }
@@ -59,11 +59,11 @@ void result(fer_ga_t *ga, int c)
     fclose(fres);
 }
 
-int terminate(fer_ga_t *ga, void *data)
+int terminate(svo_ga_t *ga, void *data)
 {
     int i, max, min, avg;
     void *indiv;
-    fer_real_t *ft, f;
+    bor_real_t *ft, f;
     static int counter = 0;
 
     ++counter;
@@ -76,10 +76,10 @@ int terminate(fer_ga_t *ga, void *data)
     max = -1;
     avg = 0;
     for (i = 0; i < popsize; i++){
-        indiv = ferGAIndiv(ga, i);
-        ft    = ferGAIndivFitness(ga, indiv);
+        indiv = svoGAIndiv(ga, i);
+        ft    = svoGAIndivFitness(ga, indiv);
 
-        f = FER_ONE / ft[0];
+        f = BOR_ONE / ft[0];
         avg += f;
         if (f < min)
             min = f;
@@ -100,7 +100,7 @@ int terminate(fer_ga_t *ga, void *data)
     return 0;
 }
 
-void eval(fer_ga_t *ga, void *_gt, fer_real_t *fitness, void *data)
+void eval(svo_ga_t *ga, void *_gt, bor_real_t *fitness, void *data)
 {
     int *gt = (int *)_gt;
     int i, min, max, avg;
@@ -125,31 +125,31 @@ void eval(fer_ga_t *ga, void *_gt, fer_real_t *fitness, void *data)
     }
     avg /= popsize;
 
-    fitness[0] = FER_ONE / (max - min);
+    fitness[0] = BOR_ONE / (max - min);
 }
 
-void init(fer_ga_t *ga, void *_gt, void *data)
+void init(svo_ga_t *ga, void *_gt, void *data)
 {
     int *gt = (int *)_gt;
     int i;
 
     for (i = 0; i < input_size; i++){
-        gt[i] = ferGARandInt(ga, 0, bins);
+        gt[i] = svoGARandInt(ga, 0, bins);
     }
 }
 
-void mutate(fer_ga_t *ga, void *_gt, void *data)
+void mutate(svo_ga_t *ga, void *_gt, void *data)
 {
     int *gt = (int *)_gt;
     int i, val;
 
-    i = ferGARandInt(ga, 0, input_size);
+    i = svoGARandInt(ga, 0, input_size);
     val = gt[i];
     if (val == 0){
         val = 1;
     }else if (val == bins - 1){
         val = bins - 2;
-    }else if (ferGARandInt(ga, -1, 1) < 0){
+    }else if (svoGARandInt(ga, -1, 1) < 0){
         val -= 1;
     }else{
         val += 1;
@@ -157,14 +157,14 @@ void mutate(fer_ga_t *ga, void *_gt, void *data)
 
     gt[i] = val;
 
-    gt[i] = ferGARandInt(ga, 0, bins);
+    gt[i] = svoGARandInt(ga, 0, bins);
 }
 
 int main(int argc, char *argv[])
 {
-    fer_ga_ops_t ops;
-    fer_ga_params_t params;
-    fer_ga_t *ga;
+    svo_ga_ops_t ops;
+    svo_ga_params_t params;
+    svo_ga_t *ga;
     char fn[100];
     int i;
 
@@ -176,14 +176,14 @@ int main(int argc, char *argv[])
     for (input_size = 0; scanf("%d", input + input_size) == 1; input_size++);
     printf("input_size: %d\n", input_size);
 
-    ferGAOpsInit(&ops);
-    ferGAParamsInit(&params);
+    svoGAOpsInit(&ops);
+    svoGAParamsInit(&params);
 
     ops.terminate = terminate;
     ops.eval      = eval;
     ops.init      = init;
     ops.mutate    = mutate;
-    ops.sel       = ferGASelTournament2;
+    ops.sel       = svoGASelTournament2;
 
     params.pc             = 0.7;
     params.pm             = 0.3;
@@ -200,12 +200,12 @@ int main(int argc, char *argv[])
         flog = fopen(fn, "w");
         fprintf(flog, "# avg min\n");
 
-        ga = ferGANew(&ops, &params);
+        ga = svoGANew(&ops, &params);
 
-        ferGARun(ga);
+        svoGARun(ga);
         result(ga, i);
 
-        ferGADel(ga);
+        svoGADel(ga);
 
         fclose(flog);
     }

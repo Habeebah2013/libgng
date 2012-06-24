@@ -14,26 +14,26 @@
  *  See the License for more information.
  */
 
-#include <fermat/gng-t.h>
-#include <fermat/dbg.h>
-#include <fermat/alloc.h>
+#include <svoboda/gng-t.h>
+#include <boruvka/dbg.h>
+#include <boruvka/alloc.h>
 
-static void ferGNGTHebbianLearning(fer_gngt_t *gng,
-                                   fer_gngt_node_t *n1,
-                                   fer_gngt_node_t *n2);
-static fer_gngt_node_t *ferGNGTNodeNeighborWithHighestErr(fer_gngt_t *gng,
-                                                          fer_gngt_node_t *n);
+static void svoGNGTHebbianLearning(svo_gngt_t *gng,
+                                   svo_gngt_node_t *n1,
+                                   svo_gngt_node_t *n2);
+static svo_gngt_node_t *svoGNGTNodeNeighborWithHighestErr(svo_gngt_t *gng,
+                                                          svo_gngt_node_t *n);
 
 /** Delete callbacks */
-static void nodeFinalDel(fer_net_node_t *node, void *data);
-static void delEdge(fer_net_edge_t *edge, void *data);
+static void nodeFinalDel(bor_net_node_t *node, void *data);
+static void delEdge(bor_net_edge_t *edge, void *data);
 
-void ferGNGTOpsInit(fer_gngt_ops_t *ops)
+void svoGNGTOpsInit(svo_gngt_ops_t *ops)
 {
-    bzero(ops, sizeof(fer_gngt_ops_t));
+    bzero(ops, sizeof(svo_gngt_ops_t));
 }
 
-void ferGNGTParamsInit(fer_gngt_params_t *params)
+void svoGNGTParamsInit(svo_gngt_params_t *params)
 {
     params->lambda  = 200;
     params->eb      = 0.05;
@@ -42,14 +42,14 @@ void ferGNGTParamsInit(fer_gngt_params_t *params)
     params->target  = 100.;
 }
 
-fer_gngt_t *ferGNGTNew(const fer_gngt_ops_t *ops,
-                       const fer_gngt_params_t *params)
+svo_gngt_t *svoGNGTNew(const svo_gngt_ops_t *ops,
+                       const svo_gngt_params_t *params)
 {
-    fer_gngt_t *gng;
+    svo_gngt_t *gng;
 
-    gng = FER_ALLOC(fer_gngt_t);
+    gng = BOR_ALLOC(svo_gngt_t);
 
-    gng->net = ferNetNew();
+    gng->net = borNetNew();
 
     gng->ops    = *ops;
     gng->params = *params;
@@ -79,30 +79,30 @@ fer_gngt_t *ferGNGTNew(const fer_gngt_ops_t *ops,
     return gng;
 }
 
-void ferGNGTDel(fer_gngt_t *gng)
+void svoGNGTDel(svo_gngt_t *gng)
 {
     if (gng->net){
-        ferNetDel2(gng->net, nodeFinalDel, gng,
+        borNetDel2(gng->net, nodeFinalDel, gng,
                              delEdge, gng);
     }
 
-    FER_FREE(gng);
+    BOR_FREE(gng);
 }
 
-void ferGNGTRun(fer_gngt_t *gng)
+void svoGNGTRun(svo_gngt_t *gng)
 {
     unsigned long cycle = 0L;
     size_t i;
 
-    ferGNGTInit(gng);
+    svoGNGTInit(gng);
 
     do {
-        ferGNGTReset(gng);
+        svoGNGTReset(gng);
         for (i = 0; i < gng->params.lambda; i++){
-            ferGNGTAdapt(gng);
+            svoGNGTAdapt(gng);
         }
 
-        ferGNGTGrowShrink(gng);
+        svoGNGTGrowShrink(gng);
 
         cycle++;
         if (gng->ops.callback && gng->ops.callback_period == cycle){
@@ -112,10 +112,10 @@ void ferGNGTRun(fer_gngt_t *gng)
     } while (!gng->ops.terminate(gng->ops.terminate_data));
 }
 
-void ferGNGTInit(fer_gngt_t *gng)
+void svoGNGTInit(svo_gngt_t *gng)
 {
     const void *is;
-    fer_gngt_node_t *n1 = NULL, *n2 = NULL;
+    svo_gngt_node_t *n1 = NULL, *n2 = NULL;
 
     if (gng->ops.init){
         gng->ops.init(&n1, &n2, gng->ops.init_data);
@@ -127,33 +127,33 @@ void ferGNGTInit(fer_gngt_t *gng)
         n2 = gng->ops.new_node(is, gng->ops.new_node_data);
     }
 
-    ferGNGTNodeAdd(gng, n1);
-    ferGNGTNodeAdd(gng, n2);
-    ferGNGTEdgeNew(gng, n1, n2);
+    svoGNGTNodeAdd(gng, n1);
+    svoGNGTNodeAdd(gng, n2);
+    svoGNGTEdgeNew(gng, n1, n2);
 }
 
-void ferGNGTReset(fer_gngt_t *gng)
+void svoGNGTReset(svo_gngt_t *gng)
 {
-    fer_list_t *list, *item;
-    fer_gngt_node_t *n;
+    bor_list_t *list, *item;
+    svo_gngt_node_t *n;
 
-    list = ferGNGTNodes(gng);
-    FER_LIST_FOR_EACH(list, item){
-        n = ferGNGTNodeFromList(item);
+    list = svoGNGTNodes(gng);
+    BOR_LIST_FOR_EACH(list, item){
+        n = svoGNGTNodeFromList(item);
         n->err = 0;
         n->won = 0;
     }
 }
 
-void ferGNGTAdapt(fer_gngt_t *gng)
+void svoGNGTAdapt(svo_gngt_t *gng)
 {
     const void *is;
-    fer_net_edge_t *ne;
-    fer_net_node_t *nn;
-    fer_gngt_node_t *n1, *n2;
-    fer_gngt_edge_t *e;
-    fer_real_t dist2;
-    fer_list_t *list, *item, *item_tmp;
+    bor_net_edge_t *ne;
+    bor_net_node_t *nn;
+    svo_gngt_node_t *n1, *n2;
+    svo_gngt_edge_t *e;
+    bor_real_t dist2;
+    bor_list_t *list, *item, *item_tmp;
 
     // 1. Get input signal
     is = gng->ops.input_signal(gng->ops.input_signal_data);
@@ -163,7 +163,7 @@ void ferGNGTAdapt(fer_gngt_t *gng)
     n1->won = 1;
 
     // 3. Create (or refresh) an edge between n1 and n2
-    ferGNGTHebbianLearning(gng, n1, n2);
+    svoGNGTHebbianLearning(gng, n1, n2);
 
     // 4. Update accumulator
     dist2 = gng->ops.dist2(is, n1, gng->ops.dist2_data);
@@ -176,23 +176,23 @@ void ferGNGTAdapt(fer_gngt_t *gng)
     // 6. Move n1's neighbors towards is
     // + 7. Increment age of all edges emanating from n1
     // + 8. Remove edges with age > age_max
-    list = ferNetNodeEdges(&n1->node);
-    FER_LIST_FOR_EACH_SAFE(list, item, item_tmp){
-        ne = ferNetEdgeFromNodeList(item);
-        e  = fer_container_of(ne, fer_gngt_edge_t, edge);
-        nn = ferNetEdgeOtherNode(ne, &n1->node);
-        n2 = fer_container_of(nn, fer_gngt_node_t, node);
+    list = borNetNodeEdges(&n1->node);
+    BOR_LIST_FOR_EACH_SAFE(list, item, item_tmp){
+        ne = borNetEdgeFromNodeList(item);
+        e  = bor_container_of(ne, svo_gngt_edge_t, edge);
+        nn = borNetEdgeOtherNode(ne, &n1->node);
+        n2 = bor_container_of(nn, svo_gngt_node_t, node);
 
         // increment age (7.)
         e->age += 1;
 
         // delete edge (8.)
         if (e->age > gng->params.age_max){
-            ferGNGTEdgeDel(gng, e);
+            svoGNGTEdgeDel(gng, e);
 
-            if (ferNetNodeEdgesLen(&n2->node) == 0){
+            if (borNetNodeEdgesLen(&n2->node) == 0){
                 // remove node if not connected into net anymore
-                ferGNGTNodeDel(gng, n2);
+                svoGNGTNodeDel(gng, n2);
             }
         }else{
             // move node (6.)
@@ -202,35 +202,35 @@ void ferGNGTAdapt(fer_gngt_t *gng)
     }
 
     // remove winning node if not connected into net
-    if (ferNetNodeEdgesLen(&n1->node) == 0){
+    if (borNetNodeEdgesLen(&n1->node) == 0){
         // remove node if not connected into net anymore
-        ferGNGTNodeDel(gng, n1);
+        svoGNGTNodeDel(gng, n1);
     }
 }
 
-void ferGNGTGrowShrink(fer_gngt_t *gng)
+void svoGNGTGrowShrink(svo_gngt_t *gng)
 {
-    fer_list_t *list, *item, *item_tmp;
-    fer_gngt_node_t *n, *max, *min, *max2;
-    fer_gngt_edge_t *e;
-    fer_real_t avg, num;
+    bor_list_t *list, *item, *item_tmp;
+    svo_gngt_node_t *n, *max, *min, *max2;
+    svo_gngt_edge_t *e;
+    bor_real_t avg, num;
 
-    avg = num = FER_ZERO;
+    avg = num = BOR_ZERO;
     max = min = NULL;
 
-    list = ferGNGTNodes(gng);
-    FER_LIST_FOR_EACH_SAFE(list, item, item_tmp){
-        n = ferGNGTNodeFromList(item);
+    list = svoGNGTNodes(gng);
+    BOR_LIST_FOR_EACH_SAFE(list, item, item_tmp){
+        n = svoGNGTNodeFromList(item);
 
         /*
         if (!n->won){
-            ferGNGTNodeDel(gng, n);
+            svoGNGTNodeDel(gng, n);
             continue;
         }
         */
 
         avg += n->err;
-        num += FER_ONE;
+        num += BOR_ONE;
 
         if (!max || max->err < n->err)
             max = n;
@@ -244,23 +244,23 @@ void ferGNGTGrowShrink(fer_gngt_t *gng)
 
     if (gng->params.target < avg){
         // more accuracy required
-        if (max && (max2 = ferGNGTNodeNeighborWithHighestErr(gng, max))){
+        if (max && (max2 = svoGNGTNodeNeighborWithHighestErr(gng, max))){
             n = gng->ops.new_node_between(max, max2,
                                           gng->ops.new_node_between_data);
-            ferGNGTNodeAdd(gng, n);
-            ferGNGTEdgeNew(gng, n, max);
-            ferGNGTEdgeNew(gng, n, max2);
+            svoGNGTNodeAdd(gng, n);
+            svoGNGTEdgeNew(gng, n, max);
+            svoGNGTEdgeNew(gng, n, max2);
 
-            e = ferGNGTEdgeBetween(gng, max, max2);
-            ferGNGTEdgeDel(gng, e);
+            e = svoGNGTEdgeBetween(gng, max, max2);
+            svoGNGTEdgeDel(gng, e);
         }
     }else{
         // too much accuracy, remove the node with the smallest error
         if (min)
-            ferGNGTNodeDel(gng, min);
+            svoGNGTNodeDel(gng, min);
     }
 
-    if (ferGNGTNodesLen(gng) < 2){
+    if (svoGNGTNodesLen(gng) < 2){
         fprintf(stderr, "GNG-T Error: Check the parameters! The network shrinks too much.\n");
         exit(-1);
     }
@@ -269,95 +269,95 @@ void ferGNGTGrowShrink(fer_gngt_t *gng)
 
 
 
-void ferGNGTNodeDisconnect(fer_gngt_t *gng, fer_gngt_node_t *n)
+void svoGNGTNodeDisconnect(svo_gngt_t *gng, svo_gngt_node_t *n)
 {
-    fer_list_t *edges, *item, *itemtmp;
-    fer_net_edge_t *ne;
-    fer_gngt_edge_t *edge;
+    bor_list_t *edges, *item, *itemtmp;
+    bor_net_edge_t *ne;
+    svo_gngt_edge_t *edge;
 
     // remove incidenting edges
-    edges = ferNetNodeEdges(&n->node);
-    FER_LIST_FOR_EACH_SAFE(edges, item, itemtmp){
-        ne = ferNetEdgeFromNodeList(item);
-        edge = ferGNGTEdgeFromNet(ne);
-        ferGNGTEdgeDel(gng, edge);
+    edges = borNetNodeEdges(&n->node);
+    BOR_LIST_FOR_EACH_SAFE(edges, item, itemtmp){
+        ne = borNetEdgeFromNodeList(item);
+        edge = svoGNGTEdgeFromNet(ne);
+        svoGNGTEdgeDel(gng, edge);
     }
 }
 
-fer_gngt_node_t *ferGNGTNodeNewAtPos(fer_gngt_t *gng, const void *is)
+svo_gngt_node_t *svoGNGTNodeNewAtPos(svo_gngt_t *gng, const void *is)
 {
-    fer_gngt_node_t *r, *n1, *n2;
+    svo_gngt_node_t *r, *n1, *n2;
 
     gng->ops.nearest(is, &n1, &n2, gng->ops.nearest_data);
 
     r = gng->ops.new_node(is, gng->ops.new_node_data);
-    ferGNGTNodeAdd(gng, r);
+    svoGNGTNodeAdd(gng, r);
 
-    ferGNGTEdgeNew(gng, r, n1);
-    ferGNGTEdgeNew(gng, r, n2);
+    svoGNGTEdgeNew(gng, r, n1);
+    svoGNGTEdgeNew(gng, r, n2);
 
     return r;
 }
 
-fer_gngt_edge_t *ferGNGTEdgeNew(fer_gngt_t *gng, fer_gngt_node_t *n1,
-                                                 fer_gngt_node_t *n2)
+svo_gngt_edge_t *svoGNGTEdgeNew(svo_gngt_t *gng, svo_gngt_node_t *n1,
+                                                 svo_gngt_node_t *n2)
 {
-    fer_gngt_edge_t *e;
+    svo_gngt_edge_t *e;
 
-    e = FER_ALLOC(fer_gngt_edge_t);
+    e = BOR_ALLOC(svo_gngt_edge_t);
     e->age = 0;
 
-    ferNetAddEdge(gng->net, &e->edge, &n1->node, &n2->node);
+    borNetAddEdge(gng->net, &e->edge, &n1->node, &n2->node);
 
     return e;
 }
 
-void ferGNGTEdgeDel(fer_gngt_t *gng, fer_gngt_edge_t *edge)
+void svoGNGTEdgeDel(svo_gngt_t *gng, svo_gngt_edge_t *edge)
 {
-    ferNetRemoveEdge(gng->net, &edge->edge);
-    FER_FREE(edge);
+    borNetRemoveEdge(gng->net, &edge->edge);
+    BOR_FREE(edge);
 }
 
-void ferGNGTEdgeBetweenDel(fer_gngt_t *gng,
-                           fer_gngt_node_t *n1, fer_gngt_node_t *n2)
+void svoGNGTEdgeBetweenDel(svo_gngt_t *gng,
+                           svo_gngt_node_t *n1, svo_gngt_node_t *n2)
 {
-    fer_gngt_edge_t *e;
+    svo_gngt_edge_t *e;
 
-    if ((e = ferGNGTEdgeBetween(gng, n1, n2)) != NULL)
-        ferGNGTEdgeDel(gng, e);
+    if ((e = svoGNGTEdgeBetween(gng, n1, n2)) != NULL)
+        svoGNGTEdgeDel(gng, e);
 }
 
 
 
-static void ferGNGTHebbianLearning(fer_gngt_t *gng,
-                                   fer_gngt_node_t *n1,
-                                   fer_gngt_node_t *n2)
+static void svoGNGTHebbianLearning(svo_gngt_t *gng,
+                                   svo_gngt_node_t *n1,
+                                   svo_gngt_node_t *n2)
 {
-    fer_gngt_edge_t *e;
+    svo_gngt_edge_t *e;
 
-    e = ferGNGTEdgeBetween(gng, n1, n2);
+    e = svoGNGTEdgeBetween(gng, n1, n2);
     if (!e)
-        e = ferGNGTEdgeNew(gng, n1, n2);
+        e = svoGNGTEdgeNew(gng, n1, n2);
     e->age = 0;
 }
 
-static fer_gngt_node_t *ferGNGTNodeNeighborWithHighestErr(fer_gngt_t *gng,
-                                                          fer_gngt_node_t *q)
+static svo_gngt_node_t *svoGNGTNodeNeighborWithHighestErr(svo_gngt_t *gng,
+                                                          svo_gngt_node_t *q)
 {
-    fer_list_t *list, *item;
-    fer_net_edge_t *ne;
-    fer_net_node_t *nn;
-    fer_gngt_node_t *n, *max;
-    fer_real_t err;
+    bor_list_t *list, *item;
+    bor_net_edge_t *ne;
+    bor_net_node_t *nn;
+    svo_gngt_node_t *n, *max;
+    bor_real_t err;
 
     max = NULL;
-    err = -FER_REAL_MAX;
+    err = -BOR_REAL_MAX;
 
-    list = ferNetNodeEdges(&q->node);
-    FER_LIST_FOR_EACH(list, item){
-        ne = ferNetEdgeFromNodeList(item);
-        nn = ferNetEdgeOtherNode(ne, &q->node);
-        n  = fer_container_of(nn, fer_gngt_node_t, node);
+    list = borNetNodeEdges(&q->node);
+    BOR_LIST_FOR_EACH(list, item){
+        ne = borNetEdgeFromNodeList(item);
+        nn = borNetEdgeOtherNode(ne, &q->node);
+        n  = bor_container_of(nn, svo_gngt_node_t, node);
 
         if (n->err > err){
             err = n->err;
@@ -369,16 +369,16 @@ static fer_gngt_node_t *ferGNGTNodeNeighborWithHighestErr(fer_gngt_t *gng,
 }
 
 
-static void nodeFinalDel(fer_net_node_t *node, void *data)
+static void nodeFinalDel(bor_net_node_t *node, void *data)
 {
-    fer_gngt_t *gng = (fer_gngt_t *)data;
-    fer_gngt_node_t *n;
+    svo_gngt_t *gng = (svo_gngt_t *)data;
+    svo_gngt_node_t *n;
 
-    n = fer_container_of(node, fer_gngt_node_t, node);
+    n = bor_container_of(node, svo_gngt_node_t, node);
     gng->ops.del_node(n, gng->ops.del_node_data);
 }
 
-static void delEdge(fer_net_edge_t *edge, void *data)
+static void delEdge(bor_net_edge_t *edge, void *data)
 {
-    FER_FREE(edge);
+    BOR_FREE(edge);
 }

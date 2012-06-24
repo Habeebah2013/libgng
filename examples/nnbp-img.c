@@ -2,10 +2,10 @@
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 #include <signal.h>
-#include <fermat/nnbp.h>
-#include <fermat/image.h>
-#include <fermat/alloc.h>
-#include <fermat/dbg.h>
+#include <svoboda/nnbp.h>
+#include <boruvka/image.h>
+#include <boruvka/alloc.h>
+#include <boruvka/dbg.h>
 
 
 static SDL_Surface *screen = NULL;
@@ -53,7 +53,7 @@ int maxPatterns(int h1, int h2)
 }
 
 struct _img_tile_t {
-    fer_vec_t *v;
+    bor_vec_t *v;
     int start;
 };
 typedef struct _img_tile_t img_tile_t;
@@ -93,7 +93,7 @@ static float colorFromImg(float col)
     }
 }
 
-static void imgTiles(img_tile_t *tiles, size_t len, const fer_image_pnmf_t *img)
+static void imgTiles(img_tile_t *tiles, size_t len, const bor_image_pnmf_t *img)
 {
     size_t i;
     int x, y, pos, w, k, l, p;
@@ -102,7 +102,7 @@ static void imgTiles(img_tile_t *tiles, size_t len, const fer_image_pnmf_t *img)
     w = img->width / IMG_TILE_WIDTH;
 
     for (i = 0; i < len; i++){
-        tiles[i].v = ferVecNew(IMG_TILE_LEN);
+        tiles[i].v = borVecNew(IMG_TILE_LEN);
         x = i / w;
         y = i % w;
         tiles[i].start = (x * IMG_TILE_LEN * w) + (y * IMG_TILE_WIDTH);
@@ -111,34 +111,34 @@ static void imgTiles(img_tile_t *tiles, size_t len, const fer_image_pnmf_t *img)
         for (k = 0; k < IMG_TILE_WIDTH; k++){
             pos = tiles[i].start + (k * img->width);
             for (l = 0; l < IMG_TILE_HEIGHT; l++, pos++){
-                col = ferImagePNMFGetGray2(img, pos);
-                ferVecSet(tiles[i].v, p++, colorFromImg(col));
+                col = borImagePNMFGetGray2(img, pos);
+                borVecSet(tiles[i].v, p++, colorFromImg(col));
             }
         }
     }
 }
 
-static void imgSetTile(fer_image_pnmf_t *img, fer_nnbp_t *nn,
+static void imgSetTile(bor_image_pnmf_t *img, svo_nnbp_t *nn,
                        const img_tile_t *tiles, size_t i)
 {
     int pos, k, l, p;
     float col;
-    const fer_vec_t *vout;
+    const bor_vec_t *vout;
 
-    vout = ferNNBPFeed(nn, tiles[i].v);
+    vout = svoNNBPFeed(nn, tiles[i].v);
 
     p = 0;
     for (k = 0; k < IMG_TILE_WIDTH; k++){
         pos = tiles[i].start + (k * img->width);
         for (l = 0; l < IMG_TILE_HEIGHT; l++, pos++){
-            col = ferVecGet(vout, p++);
-            ferImagePNMFSetGray2(img, pos, colorToImg(col));
+            col = borVecGet(vout, p++);
+            borImagePNMFSetGray2(img, pos, colorToImg(col));
         }
     }
 }
 
 static void imgTilesSave(const img_tile_t *tiles, size_t len,
-                         fer_image_pnmf_t *img, const char *fn)
+                         bor_image_pnmf_t *img, const char *fn)
 {
     size_t i;
     int pos, k, l, p;
@@ -149,13 +149,13 @@ static void imgTilesSave(const img_tile_t *tiles, size_t len,
         for (k = 0; k < IMG_TILE_WIDTH; k++){
             pos = tiles[i].start + (k * img->width);
             for (l = 0; l < IMG_TILE_HEIGHT; l++, pos++){
-                col = ferVecGet(tiles[i].v, p++);
-                ferImagePNMFSetGray2(img, pos, colorToImg(col));
+                col = borVecGet(tiles[i].v, p++);
+                borImagePNMFSetGray2(img, pos, colorToImg(col));
             }
         }
     }
 
-    ferImagePNMFSave(img, fn);
+    borImagePNMFSave(img, fn);
 }
 
 
@@ -163,12 +163,12 @@ static void imgTilesDel(img_tile_t *tiles, size_t len)
 {
     size_t i;
     for (i = 0; i < len; i++){
-        ferVecDel(tiles[i].v);
+        borVecDel(tiles[i].v);
     }
 }
 
-static void imgTilesRecascade(fer_nnbp_t *nn, const img_tile_t *tiles, size_t len,
-                              fer_image_pnmf_t *img, const char *fn)
+static void imgTilesRecascade(svo_nnbp_t *nn, const img_tile_t *tiles, size_t len,
+                              bor_image_pnmf_t *img, const char *fn)
 {
     int tile;
     SDL_Surface *image;
@@ -177,7 +177,7 @@ static void imgTilesRecascade(fer_nnbp_t *nn, const img_tile_t *tiles, size_t le
     for (tile = 0; tile < len; tile++){
         imgSetTile(img, nn, tiles, tile);
     }
-    ferImagePNMFSave(img, fn);
+    borImagePNMFSave(img, fn);
 
     image = IMG_Load("out.pgm");
     dest.x = img->width;
@@ -200,14 +200,14 @@ int usage(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-    fer_nnbp_params_t params;
-    fer_nnbp_t *nn;
-    fer_image_pnmf_t *img;
+    svo_nnbp_params_t params;
+    svo_nnbp_t *nn;
+    bor_image_pnmf_t *img;
     size_t layer_size[] = { IMG_TILE_LEN, IMG_HIDDEN1, IMG_HIDDEN2, IMG_TILE_LEN };
     img_tile_t *tiles;
     size_t tiles_len;
     int i, epoch, c, tile;
-    fer_real_t err, minerr, maxerr, avgerr;
+    bor_real_t err, minerr, maxerr, avgerr;
     SDL_Surface *image;
     SDL_Rect dest;
 
@@ -218,10 +218,10 @@ int main(int argc, char *argv[])
     signal(SIGINT, imgSigint);
 
 
-    img = ferImagePNMF(argv[1]);
+    img = borImagePNMF(argv[1]);
     if (!img){
         fprintf(stderr, "File `%s' not found\n", argv[1]);
-        ferImagePNMFDel(img);
+        borImagePNMFDel(img);
         return -1;
     }else{
         printf("File `%s': %dx%d px\n", argv[1], img->width, img->height);
@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
             || img->height % IMG_TILE_HEIGHT != 0){
         fprintf(stderr, "Image is %dx%d pixels, but tile should be %dx%d pixels\n",
                 img->width, img->height, IMG_TILE_WIDTH, IMG_TILE_HEIGHT);
-        ferImagePNMFDel(img);
+        borImagePNMFDel(img);
         return -1;
     }
 
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 
 
     tiles_len = (img->width * img->height) / IMG_TILE_LEN;
-    tiles = FER_ALLOC_ARR(img_tile_t, tiles_len);
+    tiles = BOR_ALLOC_ARR(img_tile_t, tiles_len);
     imgTiles(tiles, tiles_len, img);
     printf("Tiles: %d\n", (int)tiles_len);
 
@@ -255,14 +255,14 @@ int main(int argc, char *argv[])
     SDL_Flip(screen);
 
 
-    ferNNBPParamsInit(&params);
+    svoNNBPParamsInit(&params);
     params.layers_num = sizeof(layer_size) / sizeof(size_t);
     params.layer_size = layer_size;
     params.eta = 0.3;
     params.alpha = 0.7;
     params.lambda = 1.;
-    //params.func = FER_NNBP_SIGMOID;
-    params.func = FER_NNBP_SIGMOID01;
+    //params.func = SVO_NNBP_SIGMOID;
+    params.func = SVO_NNBP_SIGMOID01;
     printf("Layers: %d", (int)params.layer_size[0]);
     for (i = 1; i < params.layers_num; i++){
         printf(" -> %d", (int)params.layer_size[i]);
@@ -270,27 +270,27 @@ int main(int argc, char *argv[])
     printf(" | max patterns: %d\n", maxPatterns(params.layer_size[1], params.layer_size[2]));
     fflush(stdout);
 
-    nn = ferNNBPNew(&params);
+    nn = svoNNBPNew(&params);
 
     imgTilesRecascade(nn, tiles, tiles_len, img, "out.pgm");
 
     for (epoch = 0; epoch < IMG_MAX_EPOCHS && !end; epoch++){
-        maxerr = -FER_REAL_MAX;
-        minerr = FER_REAL_MAX;
-        avgerr = FER_ZERO;
+        maxerr = -BOR_REAL_MAX;
+        minerr = BOR_REAL_MAX;
+        avgerr = BOR_ZERO;
         for (tile = 0; tile < tiles_len; tile++){
             for (c = 0; c < IMG_CYCLES; c++){
-                ferNNBPLearn(nn, tiles[tile].v, tiles[tile].v);
+                svoNNBPLearn(nn, tiles[tile].v, tiles[tile].v);
             }
 
-            err = ferNNBPErr(nn, tiles[tile].v);
+            err = svoNNBPErr(nn, tiles[tile].v);
             if (err > maxerr)
                 maxerr = err;
             if (err < minerr)
                 minerr = err;
             avgerr += err;
         }
-        avgerr /= (fer_real_t)tiles_len;
+        avgerr /= (bor_real_t)tiles_len;
         printf("[%02d] %f - %f - %f\n", (int)epoch, (float)minerr, (float)avgerr, (float)maxerr);
         fflush(stdout);
 
@@ -301,11 +301,11 @@ int main(int argc, char *argv[])
     imgTilesRecascade(nn, tiles, tiles_len, img, "out.pgm");
 
 
-    ferNNBPDel(nn);
+    svoNNBPDel(nn);
 
     imgTilesDel(tiles, tiles_len);
     free(tiles);
-    ferImagePNMFDel(img);
+    borImagePNMFDel(img);
 
 
     SDL_Quit();

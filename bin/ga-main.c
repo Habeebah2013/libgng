@@ -14,10 +14,10 @@
  *  See the License for more information.
  */
 
-#include <fermat/ga.h>
-#include <fermat/dbg.h>
+#include <svoboda/ga.h>
+#include <boruvka/dbg.h>
 
-int terminate(fer_ga_t *ga, void *data)
+int terminate(svo_ga_t *ga, void *data)
 {
     static int counter = 0;
 
@@ -31,17 +31,17 @@ int terminate(fer_ga_t *ga, void *data)
 
 int main(int argc, char *argv[])
 {
-    fer_ga_ops_t ops;
-    fer_ga_params_t params;
-    fer_ga_t *ga;
+    svo_ga_ops_t ops;
+    svo_ga_params_t params;
+    svo_ga_t *ga;
 
-    ferGAOpsParamsInt(&ops, &params, 5, 11);
+    svoGAOpsParamsInt(&ops, &params, 5, 11);
     ops.terminate = terminate;
     params.pm = 0.01;
 
-    ga = ferGANew(&ops, &params);
-    ferGARun(ga);
-    ferGADel(ga);
+    ga = svoGANew(&ops, &params);
+    svoGARun(ga);
+    svoGADel(ga);
 
     return 0;
 }

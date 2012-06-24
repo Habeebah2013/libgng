@@ -15,63 +15,63 @@
  */
 
 #include <string.h>
-#include <fermat/alloc.h>
-#include <fermat/dbg.h>
-#include <fermat/gpc-tree.h>
+#include <boruvka/alloc.h>
+#include <boruvka/dbg.h>
+#include <svoboda/gpc-tree.h>
 
 
-fer_gpc_node_t *ferGPCNodeNew(int idx, int ndesc, size_t memsize)
+svo_gpc_node_t *svoGPCNodeNew(int idx, int ndesc, size_t memsize)
 {
-    fer_gpc_node_t *node;
+    svo_gpc_node_t *node;
 
-    node = FER_ALLOC(fer_gpc_node_t);
+    node = BOR_ALLOC(svo_gpc_node_t);
     node->idx   = idx;
     node->ndesc = ndesc;
 
     node->desc = NULL;
     if (ndesc > 0){
-        node->desc = FER_ALLOC_ARR(fer_gpc_node_t *, ndesc);
+        node->desc = BOR_ALLOC_ARR(svo_gpc_node_t *, ndesc);
     }
 
     node->mem = NULL;
     if (memsize > 0)
-        node->mem = ferRealloc(NULL, memsize);
+        node->mem = borRealloc(NULL, memsize);
 
     return node;
 }
 
-void ferGPCNodeDel(fer_gpc_node_t *node)
+void svoGPCNodeDel(svo_gpc_node_t *node)
 {
     int i;
 
     for (i = 0; i < node->ndesc; i++){
         if (node->desc[i] != NULL)
-            ferGPCNodeDel(node->desc[i]);
+            svoGPCNodeDel(node->desc[i]);
     }
 
     if (node->desc != NULL)
-        FER_FREE(node->desc);
+        BOR_FREE(node->desc);
     if (node->mem != NULL)
-        FER_FREE(node->mem);
-    FER_FREE(node);
+        BOR_FREE(node->mem);
+    BOR_FREE(node);
 }
 
-fer_gpc_node_t *ferGPCNodeClone(fer_gpc_t *gpc, fer_gpc_node_t *node)
+svo_gpc_node_t *svoGPCNodeClone(svo_gpc_t *gpc, svo_gpc_node_t *node)
 {
-    fer_gpc_node_t *n;
+    svo_gpc_node_t *n;
     size_t memsize;
     int i;
 
     memsize = 0;
     if (node->ndesc > 0)
-        memsize = __ferGPCPredMemsize(gpc, node->idx);
+        memsize = __svoGPCPredMemsize(gpc, node->idx);
 
-    n = ferGPCNodeNew(node->idx, node->ndesc, memsize);
+    n = svoGPCNodeNew(node->idx, node->ndesc, memsize);
 
     memcpy(n->mem, node->mem, memsize);
 
     for (i = 0; i < n->ndesc; i++){
-        n->desc[i] = ferGPCNodeClone(gpc, node->desc[i]);
+        n->desc[i] = svoGPCNodeClone(gpc, node->desc[i]);
     }
 
     return n;
@@ -79,12 +79,12 @@ fer_gpc_node_t *ferGPCNodeClone(fer_gpc_t *gpc, fer_gpc_node_t *node)
 
 
 
-fer_gpc_tree_t *ferGPCTreeNew(void)
+svo_gpc_tree_t *svoGPCTreeNew(void)
 {
-    fer_gpc_tree_t *tree;
+    svo_gpc_tree_t *tree;
 
-    tree = FER_ALLOC(fer_gpc_tree_t);
-    tree->fitness = FER_ZERO;
+    tree = BOR_ALLOC(svo_gpc_tree_t);
+    tree->fitness = BOR_ZERO;
     tree->root    = NULL;
     tree->num_nodes = 0;
     tree->depth     = 0;
@@ -92,27 +92,27 @@ fer_gpc_tree_t *ferGPCTreeNew(void)
     return tree;
 }
 
-void ferGPCTreeDel(fer_gpc_tree_t *tree)
+void svoGPCTreeDel(svo_gpc_tree_t *tree)
 {
     // TODO: del root and its subtree
     if (tree->root)
-        ferGPCNodeDel(tree->root);
-    FER_FREE(tree);
+        svoGPCNodeDel(tree->root);
+    BOR_FREE(tree);
 }
 
-fer_gpc_tree_t *ferGPCTreeClone(fer_gpc_t *gpc, fer_gpc_tree_t *tree)
+svo_gpc_tree_t *svoGPCTreeClone(svo_gpc_t *gpc, svo_gpc_tree_t *tree)
 {
-    fer_gpc_tree_t *ntree;
+    svo_gpc_tree_t *ntree;
 
-    ntree            = ferGPCTreeNew();
+    ntree            = svoGPCTreeNew();
     ntree->fitness   = tree->fitness;
-    ntree->root      = ferGPCNodeClone(gpc, tree->root);
+    ntree->root      = svoGPCNodeClone(gpc, tree->root);
     ntree->num_nodes = tree->num_nodes;
 
     return ntree;
 }
 
-static int fixNumNodes(fer_gpc_node_t *node, int depth, int *rdepth)
+static int fixNumNodes(svo_gpc_node_t *node, int depth, int *rdepth)
 {
     int i, num = 1;
 
@@ -128,7 +128,7 @@ static int fixNumNodes(fer_gpc_node_t *node, int depth, int *rdepth)
     return num;
 }
 
-void ferGPCTreeFix(fer_gpc_tree_t *tree)
+void svoGPCTreeFix(svo_gpc_tree_t *tree)
 {
     int depth = 0;
 
@@ -139,8 +139,8 @@ void ferGPCTreeFix(fer_gpc_tree_t *tree)
 }
 
 
-static int nodeById(fer_gpc_node_t *node, int idx, int cur, int depth,
-                    fer_gpc_node_t **rnode, fer_gpc_node_t ***rdesc,
+static int nodeById(svo_gpc_node_t *node, int idx, int cur, int depth,
+                    svo_gpc_node_t **rnode, svo_gpc_node_t ***rdesc,
                     int *rdepth)
 {
     int i, ret;
@@ -173,10 +173,10 @@ static int nodeById(fer_gpc_node_t *node, int idx, int cur, int depth,
     return cur;
 }
 
-fer_gpc_node_t *ferGPCTreeNodeById(fer_gpc_tree_t *tree, int idx,
-                                   fer_gpc_node_t ***desc, int *depth)
+svo_gpc_node_t *svoGPCTreeNodeById(svo_gpc_tree_t *tree, int idx,
+                                   svo_gpc_node_t ***desc, int *depth)
 {
-    fer_gpc_node_t *node;
+    svo_gpc_node_t *node;
 
     *depth = 0;
 
@@ -193,7 +193,7 @@ fer_gpc_node_t *ferGPCTreeNodeById(fer_gpc_tree_t *tree, int idx,
     return node;
 }
 
-static void ferGPCNodePrint(const fer_gpc_node_t *node, FILE *fout, int depth)
+static void svoGPCNodePrint(const svo_gpc_node_t *node, FILE *fout, int depth)
 {
     int i;
 
@@ -209,15 +209,15 @@ static void ferGPCNodePrint(const fer_gpc_node_t *node, FILE *fout, int depth)
     fprintf(fout, "\n");
 
     for (i = 0; i < node->ndesc; i++){
-        ferGPCNodePrint(node->desc[i], fout, depth + 1);
+        svoGPCNodePrint(node->desc[i], fout, depth + 1);
     }
 }
 
-void __ferGPCTreePrint(const fer_gpc_tree_t *tree, FILE *fout)
+void __svoGPCTreePrint(const svo_gpc_tree_t *tree, FILE *fout)
 {
     fprintf(fout, "fitness: %f, num_nodes: %d [%lx]\n",
             tree->fitness, (int)tree->num_nodes, (long)tree);
     if (tree->root)
-        ferGPCNodePrint(tree->root, fout, 0);
+        svoGPCNodePrint(tree->root, fout, 0);
     fprintf(fout, "--------\n");
 }

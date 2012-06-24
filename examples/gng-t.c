@@ -1,63 +1,63 @@
 #include <stdio.h>
 #include <signal.h>
-#include <fermat/dbg.h>
-#include <fermat/timer.h>
-#include <fermat/gng-t.h>
-#include <fermat/pc.h>
-#include <fermat/gug.h>
-#include <fermat/alloc.h>
-#include <fermat/vec3.h>
+#include <boruvka/dbg.h>
+#include <boruvka/timer.h>
+#include <svoboda/gng-t.h>
+#include <boruvka/pc.h>
+#include <boruvka/gug.h>
+#include <boruvka/alloc.h>
+#include <boruvka/vec3.h>
 
 struct _node_t {
-    fer_gngt_node_t node;
+    svo_gngt_node_t node;
 
-    fer_vec_t *w;
-    fer_gug_el_t gug;
+    bor_vec_t *w;
+    bor_gug_el_t gug;
 
     int _id;
 };
 typedef struct _node_t node_t;
 
 int dim;
-fer_real_t target;
-FER_VEC(tmpv, 10);
+bor_real_t target;
+BOR_VEC(tmpv, 10);
 int dump = 0, dump_num = 0;
 
-fer_gngt_params_t params;
-fer_gngt_ops_t ops;
-fer_gngt_t *gng;
+svo_gngt_params_t params;
+svo_gngt_ops_t ops;
+svo_gngt_t *gng;
 
-fer_gug_params_t gug_params;
-fer_gug_t *gug;
+bor_gug_params_t gug_params;
+bor_gug_t *gug;
 
-fer_timer_t timer;
+bor_timer_t timer;
 
-fer_pc_t *pc;
-fer_pc_it_t pcit;
+bor_pc_t *pc;
+bor_pc_it_t pcit;
 
 static int terminate(void *data);
 static void callback(void *data);
 static const void *input_signal(void *data);
-static fer_gngt_node_t *new_node(const void *is, void *);
-static fer_gngt_node_t *new_node_between(const fer_gngt_node_t *n1,
-                                         const fer_gngt_node_t *n2, void *);
-static void del_node(fer_gngt_node_t *n, void *);
+static svo_gngt_node_t *new_node(const void *is, void *);
+static svo_gngt_node_t *new_node_between(const svo_gngt_node_t *n1,
+                                         const svo_gngt_node_t *n2, void *);
+static void del_node(svo_gngt_node_t *n, void *);
 static void nearest(const void *input_signal,
-                    fer_gngt_node_t **n1,
-                    fer_gngt_node_t **n2, void *);
-static fer_real_t dist2(const void *input_signal,
-                        const fer_gngt_node_t *node, void *);
-static void move_towards(fer_gngt_node_t *node,
+                    svo_gngt_node_t **n1,
+                    svo_gngt_node_t **n2, void *);
+static bor_real_t dist2(const void *input_signal,
+                        const svo_gngt_node_t *node, void *);
+static void move_towards(svo_gngt_node_t *node,
                          const void *input_signal,
-                         fer_real_t fraction, void *);
-static void dumpSVT(fer_gngt_t *gng, FILE *out, const char *name);
+                         bor_real_t fraction, void *);
+static void dumpSVT(svo_gngt_t *gng, FILE *out, const char *name);
 
 static void sigDump(int sig);
 
 int main(int argc, char *argv[])
 {
     size_t size;
-    fer_real_t aabb[30];
+    bor_real_t aabb[30];
 
     if (argc < 4){
         fprintf(stderr, "Usage: %s dim file.pts target\n", argv[0]);
@@ -68,30 +68,30 @@ int main(int argc, char *argv[])
     target = atof(argv[3]);
 
     // read input points
-    pc = ferPCNew(dim);
-    size = ferPCAddFromFile(pc, argv[2]);
+    pc = borPCNew(dim);
+    size = borPCAddFromFile(pc, argv[2]);
     fprintf(stderr, "Added %d points from %s\n", (int)size, argv[2]);
-    ferPCPermutate(pc);
-    ferPCItInit(&pcit, pc);
+    borPCPermutate(pc);
+    borPCItInit(&pcit, pc);
 
 
     // create NN search structure
-    ferGUGParamsInit(&gug_params);
+    borGUGParamsInit(&gug_params);
     gug_params.dim         = atoi(argv[1]);
     gug_params.num_cells   = 0;
     gug_params.max_dens    = 0.1;
     gug_params.expand_rate = 1.5;
-    ferPCAABB(pc, aabb);
+    borPCAABB(pc, aabb);
     gug_params.aabb = aabb;
-    gug = ferGUGNew(&gug_params);
+    gug = borGUGNew(&gug_params);
 
     // create GNG-T
-    ferGNGTParamsInit(&params);
+    svoGNGTParamsInit(&params);
     params.target = target;
     //params.age_max = 1000;
     //params.lambda = 10000;
 
-    ferGNGTOpsInit(&ops);
+    svoGNGTOpsInit(&ops);
     ops.new_node         = new_node;
     ops.new_node_between = new_node_between;
     ops.del_node         = del_node;
@@ -104,20 +104,20 @@ int main(int argc, char *argv[])
     ops.callback_period = 300;
     ops.data = NULL;
 
-    gng = ferGNGTNew(&ops, &params);
+    gng = svoGNGTNew(&ops, &params);
 
     signal(SIGINT, sigDump);
 
-    ferTimerStart(&timer);
-    ferGNGTRun(gng);
+    borTimerStart(&timer);
+    svoGNGTRun(gng);
     callback(NULL);
     fprintf(stderr, "\n");
 
     dumpSVT(gng, stdout, NULL);
 
-    ferGNGTDel(gng);
-    ferGUGDel(gug);
-    ferPCDel(pc);
+    svoGNGTDel(gng);
+    borGUGDel(gug);
+    borPCDel(pc);
 
     return 0;
 }
@@ -138,109 +138,109 @@ static int terminate(void *data)
     }
 
     return 0;
-    return ferGNGTNodesLen(gng) >= 1000;
+    return svoGNGTNodesLen(gng) >= 1000;
 }
 
 static void callback(void *data)
 {
     size_t nodes_len;
 
-    nodes_len = ferGNGTNodesLen(gng);
+    nodes_len = svoGNGTNodesLen(gng);
 
-    ferTimerStopAndPrintElapsed(&timer, stderr, " n: %d, avg err: %f, target: %f\r",
-            nodes_len, ferGNGTAvgErr(gng), target);
+    borTimerStopAndPrintElapsed(&timer, stderr, " n: %d, avg err: %f, target: %f\r",
+            nodes_len, svoGNGTAvgErr(gng), target);
 }
 
 static const void *input_signal(void *data)
 {
-    const fer_vec_t *v;
+    const bor_vec_t *v;
 
-    if (ferPCItEnd(&pcit)){
-        ferPCPermutate(pc);
-        ferPCItInit(&pcit, pc);
+    if (borPCItEnd(&pcit)){
+        borPCPermutate(pc);
+        borPCItInit(&pcit, pc);
     }
-    v = ferPCItGet(&pcit);
-    ferPCItNext(&pcit);
+    v = borPCItGet(&pcit);
+    borPCItNext(&pcit);
     return (const void *)v;
 }
 
-static fer_gngt_node_t *new_node(const void *is, void *_)
+static svo_gngt_node_t *new_node(const void *is, void *_)
 {
     node_t *n;
 
-    n = FER_ALLOC(node_t);
-    n->w = ferVecClone(dim, (const fer_vec_t *)is);
-    ferGUGElInit(&n->gug, n->w);
-    ferGUGAdd(gug, &n->gug);
+    n = BOR_ALLOC(node_t);
+    n->w = borVecClone(dim, (const bor_vec_t *)is);
+    borGUGElInit(&n->gug, n->w);
+    borGUGAdd(gug, &n->gug);
 
     return &n->node;
 }
 
-static fer_gngt_node_t *new_node_between(const fer_gngt_node_t *_n1,
-                                         const fer_gngt_node_t *_n2, void *_)
+static svo_gngt_node_t *new_node_between(const svo_gngt_node_t *_n1,
+                                         const svo_gngt_node_t *_n2, void *_)
 {
-    node_t *n1 = fer_container_of(_n1, node_t, node);
-    node_t *n2 = fer_container_of(_n2, node_t, node);
+    node_t *n1 = bor_container_of(_n1, node_t, node);
+    node_t *n2 = bor_container_of(_n2, node_t, node);
 
-    ferVecAdd2(dim, tmpv, n1->w, n2->w);
-    ferVecScale(dim, tmpv, FER_REAL(0.5));
+    borVecAdd2(dim, tmpv, n1->w, n2->w);
+    borVecScale(dim, tmpv, BOR_REAL(0.5));
 
     return new_node((const void *)tmpv, NULL);
 }
 
-static void del_node(fer_gngt_node_t *_n, void *_)
+static void del_node(svo_gngt_node_t *_n, void *_)
 {
-    node_t *n = fer_container_of(_n, node_t, node);
+    node_t *n = bor_container_of(_n, node_t, node);
 
-    ferGUGRemove(gug, &n->gug);
-    ferVecDel(n->w);
+    borGUGRemove(gug, &n->gug);
+    borVecDel(n->w);
     free(n);
 }
 
 static void nearest(const void *is,
-                    fer_gngt_node_t **n1,
-                    fer_gngt_node_t **n2, void *_)
+                    svo_gngt_node_t **n1,
+                    svo_gngt_node_t **n2, void *_)
 {
-    fer_gug_el_t *els[2];
+    bor_gug_el_t *els[2];
     node_t *ns[2];
 
-    ferGUGNearest(gug, (const fer_vec_t *)is, 2, els);
-    ns[0] = fer_container_of(els[0], node_t, gug);
-    ns[1] = fer_container_of(els[1], node_t, gug);
+    borGUGNearest(gug, (const bor_vec_t *)is, 2, els);
+    ns[0] = bor_container_of(els[0], node_t, gug);
+    ns[1] = bor_container_of(els[1], node_t, gug);
     *n1 = &ns[0]->node;
     *n2 = &ns[1]->node;
 }
 
-static fer_real_t dist2(const void *is,
-                        const fer_gngt_node_t *node, void *_)
+static bor_real_t dist2(const void *is,
+                        const svo_gngt_node_t *node, void *_)
 {
-    node_t *n = fer_container_of(node, node_t, node);
+    node_t *n = bor_container_of(node, node_t, node);
 
-    return ferVecDist2(dim, (const fer_vec_t *)is, n->w);
+    return borVecDist2(dim, (const bor_vec_t *)is, n->w);
 }
 
-static void move_towards(fer_gngt_node_t *node,
+static void move_towards(svo_gngt_node_t *node,
                          const void *is,
-                         fer_real_t fraction, void *_)
+                         bor_real_t fraction, void *_)
 {
     node_t *n;
 
-    n = fer_container_of(node, node_t, node);
+    n = bor_container_of(node, node_t, node);
 
-    ferVecSub2(dim, tmpv, (const fer_vec_t *)is, n->w);
-    ferVecScale(dim, tmpv, fraction);
-    ferVecAdd(dim, n->w, tmpv);
+    borVecSub2(dim, tmpv, (const bor_vec_t *)is, n->w);
+    borVecScale(dim, tmpv, fraction);
+    borVecAdd(dim, n->w, tmpv);
 
-    ferGUGUpdate(gug, &n->gug);
+    borGUGUpdate(gug, &n->gug);
 }
 
-static void dumpSVT(fer_gngt_t *gng, FILE *out, const char *name)
+static void dumpSVT(svo_gngt_t *gng, FILE *out, const char *name)
 {
-    fer_list_t *list, *item;
-    fer_net_node_t *nn;
-    fer_gngt_node_t *gn;
+    bor_list_t *list, *item;
+    bor_net_node_t *nn;
+    svo_gngt_node_t *gn;
     node_t *n;
-    fer_net_edge_t *e;
+    bor_net_edge_t *e;
     size_t i, id1, id2;
 
     if (dim != 2 && dim != 3)
@@ -252,35 +252,35 @@ static void dumpSVT(fer_gngt_t *gng, FILE *out, const char *name)
         fprintf(out, "Name: %s\n", name);
 
     fprintf(out, "Points:\n");
-    list = ferGNGTNodes(gng);
+    list = svoGNGTNodes(gng);
     i = 0;
-    FER_LIST_FOR_EACH(list, item){
-        gn = ferGNGTNodeFromList(item);
-        n  = fer_container_of(gn, node_t, node);
+    BOR_LIST_FOR_EACH(list, item){
+        gn = svoGNGTNodeFromList(item);
+        n  = bor_container_of(gn, node_t, node);
 
         n->_id = i++;
         if (dim == 2){
-            ferVec2Print((const fer_vec2_t *)n->w, out);
+            borVec2Print((const bor_vec2_t *)n->w, out);
         }else{
-            ferVec3Print((const fer_vec3_t *)n->w, out);
+            borVec3Print((const bor_vec3_t *)n->w, out);
         }
         fprintf(out, "\n");
     }
 
 
     fprintf(out, "Edges:\n");
-    list = ferGNGTEdges(gng);
-    FER_LIST_FOR_EACH(list, item){
-        e = FER_LIST_ENTRY(item, fer_net_edge_t, list);
+    list = svoGNGTEdges(gng);
+    BOR_LIST_FOR_EACH(list, item){
+        e = BOR_LIST_ENTRY(item, bor_net_edge_t, list);
 
-        nn = ferNetEdgeNode(e, 0);
-        gn = ferGNGTNodeFromNet(nn);
-        n  = fer_container_of(gn, node_t, node);
+        nn = borNetEdgeNode(e, 0);
+        gn = svoGNGTNodeFromNet(nn);
+        n  = bor_container_of(gn, node_t, node);
         id1 = n->_id;
 
-        nn = ferNetEdgeNode(e, 1);
-        gn = ferGNGTNodeFromNet(nn);
-        n  = fer_container_of(gn, node_t, node);
+        nn = borNetEdgeNode(e, 1);
+        gn = svoGNGTNodeFromNet(nn);
+        n  = bor_container_of(gn, node_t, node);
         id2 = n->_id;
         fprintf(out, "%d %d\n", (int)id1, (int)id2);
     }

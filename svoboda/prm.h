@@ -14,20 +14,20 @@
  *  See the License for more information.
  */
 
-#ifndef __FER_PRM_H__
-#define __FER_PRM_H__
+#ifndef __SVO_PRM_H__
+#define __SVO_PRM_H__
 
-#include <fermat/vec.h>
-#include <fermat/net.h>
-#include <fermat/gug.h>
-#include <fermat/dij.h>
+#include <boruvka/vec.h>
+#include <boruvka/net.h>
+#include <boruvka/gug.h>
+#include <boruvka/dij.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-#define FER_PRM_FREE 1
-#define FER_PRM_OBST 2
+#define SVO_PRM_FREE 1
+#define SVO_PRM_OBST 2
 
 
 /**
@@ -39,7 +39,7 @@ extern "C" {
  * PRM Operations
  * ---------------
  *
- * See fer_prm_ops_t.
+ * See svo_prm_ops_t.
  */
 
 /** vvvv */
@@ -47,44 +47,44 @@ extern "C" {
 /**
  * Returns random configuration.
  */
-typedef const fer_vec_t *(*fer_prm_conf)(void *);
+typedef const bor_vec_t *(*svo_prm_conf)(void *);
 
 /**
  * Returns true if algorithm should terminate.
  */
-typedef int (*fer_prm_terminate)(void *);
+typedef int (*svo_prm_terminate)(void *);
 
 /**
  * Evaluate configuration.
  *
- * Returns FER_PRM_FREE if configuration is in free space and FER_PRM_OBST
+ * Returns SVO_PRM_FREE if configuration is in free space and SVO_PRM_OBST
  * if it is obstacle configuration.
  */
-typedef int (*fer_prm_eval)(const fer_vec_t *c, void *);
+typedef int (*svo_prm_eval)(const bor_vec_t *c, void *);
 
 /**
  * Returns true if there exists path from start configuration to goal
  * configuration.
  */
-typedef int (*fer_prm_find_path)(const fer_vec_t *start,
-                                 const fer_vec_t *goal, void *);
+typedef int (*svo_prm_find_path)(const bor_vec_t *start,
+                                 const bor_vec_t *goal, void *);
 
 /**
  * Callback that is peridically called from PRM.
  *
  * It is called every .callback_period'th added node.
  */
-typedef void (*fer_prm_callback)(void *);
+typedef void (*svo_prm_callback)(void *);
 
 /** ^^^^ */
 
-struct _fer_prm_ops_t {
-    fer_prm_conf      conf;
-    fer_prm_terminate terminate;
-    fer_prm_eval      eval;
-    fer_prm_find_path find_path;
+struct _svo_prm_ops_t {
+    svo_prm_conf      conf;
+    svo_prm_terminate terminate;
+    svo_prm_eval      eval;
+    svo_prm_find_path find_path;
 
-    fer_prm_callback callback;
+    svo_prm_callback callback;
     unsigned long callback_period;
 
     void *data; /*!< Data pointer that will be provided to all callbacks if
@@ -96,12 +96,12 @@ struct _fer_prm_ops_t {
     void *find_path_data;
     void *callback_data;
 };
-typedef struct _fer_prm_ops_t fer_prm_ops_t;
+typedef struct _svo_prm_ops_t svo_prm_ops_t;
 
 /**
  * Initializes ops struct to NULL values.
  */
-void ferPRMOpsInit(fer_prm_ops_t *ops);
+void svoPRMOpsInit(svo_prm_ops_t *ops);
 
 
 
@@ -109,22 +109,22 @@ void ferPRMOpsInit(fer_prm_ops_t *ops);
  * PRM Parameters
  * ---------------
  */
-struct _fer_prm_params_t {
+struct _svo_prm_params_t {
     int d; /*!< Dimension of problem */
 
-    fer_real_t max_dist;      /*!< Maximal distance between nodes that the
+    bor_real_t max_dist;      /*!< Maximal distance between nodes that the
                                    local planner may try to connect */
-    fer_real_t max_neighbors; /*!< Maximum number of calls of the local
+    bor_real_t max_neighbors; /*!< Maximum number of calls of the local
                                    planner per node */
 
-    fer_gug_params_t gug;
+    bor_gug_params_t gug;
 };
-typedef struct _fer_prm_params_t fer_prm_params_t;
+typedef struct _svo_prm_params_t svo_prm_params_t;
 
 /**
  * Initializes params struct to default values.
  */
-void ferPRMParamsInit(fer_prm_params_t *params);
+void svoPRMParamsInit(svo_prm_params_t *params);
 
 
 
@@ -132,52 +132,52 @@ void ferPRMParamsInit(fer_prm_params_t *params);
  * PRM Algorithm
  * --------------
  */
-struct _fer_prm_t {
-    fer_net_t *net; /*!< Holds roadmap */
-    fer_gug_t *gug; /*!< NN search */
+struct _svo_prm_t {
+    bor_net_t *net; /*!< Holds roadmap */
+    bor_gug_t *gug; /*!< NN search */
 
-    fer_prm_ops_t ops;
-    fer_prm_params_t params;
+    svo_prm_ops_t ops;
+    svo_prm_params_t params;
 
-    fer_list_t components;
+    bor_list_t components;
 };
-typedef struct _fer_prm_t fer_prm_t;
+typedef struct _svo_prm_t svo_prm_t;
 
-struct _fer_prm_component_t {
-    struct _fer_prm_component_t *parent;
-    fer_list_t list;
+struct _svo_prm_component_t {
+    struct _svo_prm_component_t *parent;
+    bor_list_t list;
 };
-typedef struct _fer_prm_component_t fer_prm_component_t;
+typedef struct _svo_prm_component_t svo_prm_component_t;
 
-struct _fer_prm_node_t {
-    fer_vec_t *conf;
-    fer_prm_component_t *comp;
-    fer_net_node_t node;
-    fer_gug_el_t gug;
+struct _svo_prm_node_t {
+    bor_vec_t *conf;
+    svo_prm_component_t *comp;
+    bor_net_node_t node;
+    bor_gug_el_t gug;
 
-    fer_dij_node_t dij; /*!< Connection for dijkstra algorithm */
-    fer_list_t path;
+    bor_dij_node_t dij; /*!< Connection for dijkstra algorithm */
+    bor_list_t path;
 
     int _id;
 };
-typedef struct _fer_prm_node_t fer_prm_node_t;
+typedef struct _svo_prm_node_t svo_prm_node_t;
 
 
 /**
  * Creates new instance of PRM algorithm.
  */
-fer_prm_t *ferPRMNew(const fer_prm_ops_t *ops,
-                     const fer_prm_params_t *params);
+svo_prm_t *svoPRMNew(const svo_prm_ops_t *ops,
+                     const svo_prm_params_t *params);
 
 /**
  * Deletes PRM instance.
  */
-void ferPRMDel(fer_prm_t *prm);
+void svoPRMDel(svo_prm_t *prm);
 
 /**
  * Runs algorithm
  */
-void ferPRMRun(fer_prm_t *prm);
+void svoPRMRun(svo_prm_t *prm);
 
 /**
  * Tries to find path in net from start to goal.
@@ -185,24 +185,24 @@ void ferPRMRun(fer_prm_t *prm);
  * representing path. Nodes are connected into this list by member .path.
  * If path wasn't found -1 is returned.
  */
-int ferPRMFindPath(fer_prm_t *prm,
-                   const fer_vec_t *start, const fer_vec_t *goal,
-                   fer_list_t *list);
+int svoPRMFindPath(svo_prm_t *prm,
+                   const bor_vec_t *start, const bor_vec_t *goal,
+                   bor_list_t *list);
 
 /**
  * Returns number of nodes in roadmap.
  */
-_fer_inline size_t ferPRMNodesLen(const fer_prm_t *prm);
+_bor_inline size_t svoPRMNodesLen(const svo_prm_t *prm);
 
 /**
  * Dumps net in SVT format.
  */
-void ferPRMDumpSVT(fer_prm_t *prm, FILE *out, const char *name);
+void svoPRMDumpSVT(svo_prm_t *prm, FILE *out, const char *name);
 
 /**** INLINES ****/
-_fer_inline size_t ferPRMNodesLen(const fer_prm_t *prm)
+_bor_inline size_t svoPRMNodesLen(const svo_prm_t *prm)
 {
-    return ferNetNodesLen(prm->net);
+    return borNetNodesLen(prm->net);
 }
 
 
@@ -210,5 +210,5 @@ _fer_inline size_t ferPRMNodesLen(const fer_prm_t *prm)
 } /* extern "C" */
 #endif /* __cplusplus */
 
-#endif /* __FER_PRM_H__ */
+#endif /* __SVO_PRM_H__ */
 

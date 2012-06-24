@@ -14,17 +14,17 @@
  *  See the License for more information.
  */
 
-#ifndef __FER_GNG_EU_H__
-#define __FER_GNG_EU_H__
+#ifndef __SVO_GNG_EU_H__
+#define __SVO_GNG_EU_H__
 
-#include <fermat/net.h>
-#include <fermat/pairheap.h>
-#include <fermat/vec.h>
-#include <fermat/vec2.h>
-#include <fermat/vec3.h>
-#include <fermat/pc.h>
-#include <fermat/nn.h>
-#include <fermat/alloc.h>
+#include <boruvka/net.h>
+#include <boruvka/pairheap.h>
+#include <boruvka/vec.h>
+#include <boruvka/vec2.h>
+#include <boruvka/vec3.h>
+#include <boruvka/pc.h>
+#include <boruvka/nn.h>
+#include <boruvka/alloc.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,27 +37,27 @@ extern "C" {
  */
 
 
-struct _fer_gng_eu_node_t {
-    fer_net_node_t node;
+struct _svo_gng_eu_node_t {
+    bor_net_node_t node;
 
-    fer_real_t err;               /*!< Overall error */
+    bor_real_t err;               /*!< Overall error */
     unsigned long err_cycle;      /*!< Last cycle in which were .err changed */
-    fer_pairheap_node_t err_heap; /*!< Connection to error heap */
+    bor_pairheap_node_t err_heap; /*!< Connection to error heap */
 
-    fer_vec_t *w;   /*!< Weight vector */
-    fer_nn_el_t nn; /*!< Struct for NN search */
+    bor_vec_t *w;   /*!< Weight vector */
+    bor_nn_el_t nn; /*!< Struct for NN search */
 
-    int _id; /*!< Currently useful only for ferGNGEuDumpSVT(). */
+    int _id; /*!< Currently useful only for svoGNGEuDumpSVT(). */
 };
-typedef struct _fer_gng_eu_node_t fer_gng_eu_node_t;
+typedef struct _svo_gng_eu_node_t svo_gng_eu_node_t;
 
 
-struct _fer_gng_eu_edge_t {
-    fer_net_edge_t edge;
+struct _svo_gng_eu_edge_t {
+    bor_net_edge_t edge;
 
     int age;
 };
-typedef struct _fer_gng_eu_edge_t fer_gng_eu_edge_t;
+typedef struct _svo_gng_eu_edge_t svo_gng_eu_edge_t;
 
 
 
@@ -65,7 +65,7 @@ typedef struct _fer_gng_eu_edge_t fer_gng_eu_edge_t;
  * GNGEu Operations
  * -----------------
  *
- * See fer_gng_eu_ops_t.
+ * See svo_gng_eu_ops_t.
  */
 
 /** vvvv */
@@ -73,39 +73,39 @@ typedef struct _fer_gng_eu_edge_t fer_gng_eu_edge_t;
 /**
  * Create new node initialized weight vector to input_signal.
  */
-typedef fer_gng_eu_node_t *(*fer_gng_eu_new_node)(const fer_vec_t *input_signal, void *);
+typedef svo_gng_eu_node_t *(*svo_gng_eu_new_node)(const bor_vec_t *input_signal, void *);
 
 /**
  * Deletes given node.
  */
-typedef void (*fer_gng_eu_del_node)(fer_gng_eu_node_t *n, void *);
+typedef void (*svo_gng_eu_del_node)(svo_gng_eu_node_t *n, void *);
 
 /**
  * Returns random input signal.
  */
-typedef const fer_vec_t *(*fer_gng_eu_input_signal)(void *);
+typedef const bor_vec_t *(*svo_gng_eu_input_signal)(void *);
 
 /**
  * Returns true if algorithm should terminate.
  */
-typedef int (*fer_gng_eu_terminate)(void *);
+typedef int (*svo_gng_eu_terminate)(void *);
 
 /**
  * Callback that is peridically called from GNGEu.
  *
  * It is called every .callback_period'th added node.
  */
-typedef void (*fer_gng_eu_callback)(void *);
+typedef void (*svo_gng_eu_callback)(void *);
 
 /** ^^^^ */
 
-struct _fer_gng_eu_ops_t {
-    fer_gng_eu_new_node     new_node;
-    fer_gng_eu_del_node     del_node;
-    fer_gng_eu_input_signal input_signal;
-    fer_gng_eu_terminate    terminate;
+struct _svo_gng_eu_ops_t {
+    svo_gng_eu_new_node     new_node;
+    svo_gng_eu_del_node     del_node;
+    svo_gng_eu_input_signal input_signal;
+    svo_gng_eu_terminate    terminate;
 
-    fer_gng_eu_callback callback;
+    svo_gng_eu_callback callback;
     unsigned long callback_period;
 
     void *data; /*!< Data pointer that will be provided to all callbacks if
@@ -116,13 +116,13 @@ struct _fer_gng_eu_ops_t {
     void *terminate_data;
     void *callback_data;
 };
-typedef struct _fer_gng_eu_ops_t fer_gng_eu_ops_t;
+typedef struct _svo_gng_eu_ops_t svo_gng_eu_ops_t;
 
 
 /**
  * Initializes ops struct to NULL values.
  */
-void ferGNGEuOpsInit(fer_gng_eu_ops_t *ops);
+void svoGNGEuOpsInit(svo_gng_eu_ops_t *ops);
 
 
 
@@ -130,27 +130,27 @@ void ferGNGEuOpsInit(fer_gng_eu_ops_t *ops);
  * GNGEu Parameters
  * -----------------
  */
-struct _fer_gng_eu_params_t {
+struct _svo_gng_eu_params_t {
     int dim;          /*!< Dimension */
 
     size_t lambda;    /*!< Number of steps between adding nodes */
-    fer_real_t eb;    /*!< Winner node learning rate */
-    fer_real_t en;    /*!< Winners' neighbors learning rate */
-    fer_real_t alpha; /*!< Decrease error counter rate */
-    fer_real_t beta;  /*!< Decrease error counter rate for all nodes */
+    bor_real_t eb;    /*!< Winner node learning rate */
+    bor_real_t en;    /*!< Winners' neighbors learning rate */
+    bor_real_t alpha; /*!< Decrease error counter rate */
+    bor_real_t beta;  /*!< Decrease error counter rate for all nodes */
     int age_max;      /*!< Maximal age of edge */
 
-    fer_nn_params_t nn; /*!< Defines which algorithm will be used for
+    bor_nn_params_t nn; /*!< Defines which algorithm will be used for
                              nearest neighbor search.
                              Default is Growing Uniform Grid with default
                              values */
 };
-typedef struct _fer_gng_eu_params_t fer_gng_eu_params_t;
+typedef struct _svo_gng_eu_params_t svo_gng_eu_params_t;
 
 /**
  * Initializes params struct to default values.
  */
-void ferGNGEuParamsInit(fer_gng_eu_params_t *params);
+void svoGNGEuParamsInit(svo_gng_eu_params_t *params);
 
 
 
@@ -158,40 +158,40 @@ void ferGNGEuParamsInit(fer_gng_eu_params_t *params);
  * GNGEu Algorithm
  * ----------------
  *
- * See fer_gng_eu_t.
+ * See svo_gng_eu_t.
  */
 
-struct _fer_gng_eu_t {
-    fer_net_t *net;
-    fer_pairheap_t *err_heap;
+struct _svo_gng_eu_t {
+    bor_net_t *net;
+    bor_pairheap_t *err_heap;
 
-    fer_gng_eu_ops_t ops;
-    fer_gng_eu_params_t params;
+    svo_gng_eu_ops_t ops;
+    svo_gng_eu_params_t params;
 
-    fer_real_t *beta_n; /*!< Precomputed beta^n for n = 1, ..., lambda */
-    fer_real_t *beta_lambda_n; /*!< Precomputed beta^(n*lambda) */
+    bor_real_t *beta_n; /*!< Precomputed beta^n for n = 1, ..., lambda */
+    bor_real_t *beta_lambda_n; /*!< Precomputed beta^(n*lambda) */
     size_t beta_lambda_n_len;
 
     size_t step;
     unsigned long cycle;
 
-    fer_nn_t *nn;
+    bor_nn_t *nn;
 
-    fer_vec_t *tmpv;
+    bor_vec_t *tmpv;
 };
-typedef struct _fer_gng_eu_t fer_gng_eu_t;
+typedef struct _svo_gng_eu_t svo_gng_eu_t;
 
 
 /**
  * Creates new instance of GNGEu algorithm.
  */
-fer_gng_eu_t *ferGNGEuNew(const fer_gng_eu_ops_t *ops,
-                     const fer_gng_eu_params_t *params);
+svo_gng_eu_t *svoGNGEuNew(const svo_gng_eu_ops_t *ops,
+                     const svo_gng_eu_params_t *params);
 
 /**
  * Deletes GNGEu.
  */
-void ferGNGEuDel(fer_gng_eu_t *gng_eu);
+void svoGNGEuDel(svo_gng_eu_t *gng_eu);
 
 /**
  * Runs GNGEu algorithm.
@@ -199,14 +199,14 @@ void ferGNGEuDel(fer_gng_eu_t *gng_eu);
  * This runs whole algorithm in loop until operation terminate() returns
  * true:
  * ~~~~~~
- * ferGNGEuinit()
+ * svoGNGEuinit()
  * do:
  *     for (step = 1 .. params.lambda):
- *         ferGNGEuLearn()
- *     ferGNGEuNewNode()
+ *         svoGNGEuLearn()
+ *     svoGNGEuNewNode()
  * while not ops.terminate()
  */
-void ferGNGEuRun(fer_gng_eu_t *gng_eu);
+void svoGNGEuRun(svo_gng_eu_t *gng_eu);
 
 
 /**
@@ -223,121 +223,121 @@ void ferGNGEuRun(fer_gng_eu_t *gng_eu);
  *     n2 = ops.new_node(is)
  * create edge between n1 and n2
  */
-void ferGNGEuInit(fer_gng_eu_t *gng_eu);
+void svoGNGEuInit(svo_gng_eu_t *gng_eu);
 
 /**
  * One competitive hebbian learning step.
  */
-void ferGNGEuLearn(fer_gng_eu_t *gng_eu);
+void svoGNGEuLearn(svo_gng_eu_t *gng_eu);
 
 /**
  * Creates new node in place with highest error counter.
  */
-void ferGNGEuNewNode(fer_gng_eu_t *gng_eu);
+void svoGNGEuNewNode(svo_gng_eu_t *gng_eu);
 
 /**
  * Performs hebbian learning between two given nodes - connection
  * between these two nodes is strengthened, i.e., edge is eigher created or
  * age of the existing edge is set to zero.
  */
-void ferGNGEuHebbianLearning(fer_gng_eu_t *gng_eu,
-                           fer_gng_eu_node_t *n1, fer_gng_eu_node_t *n2);
+void svoGNGEuHebbianLearning(svo_gng_eu_t *gng_eu,
+                           svo_gng_eu_node_t *n1, svo_gng_eu_node_t *n2);
 
 /**
  * Returns node with highest error counter.
  */
-fer_gng_eu_node_t *ferGNGEuNodeWithHighestError(fer_gng_eu_t *gng_eu);
+svo_gng_eu_node_t *svoGNGEuNodeWithHighestError(svo_gng_eu_t *gng_eu);
 
 /**
  * Finds out node with highest error counter ({n1}) and its neighbor with
  * highest error counter ({n2}). Into {edge} is stored edge connecting
  * those nodes. {n1}, {n2} and {edge} are ignored if NULL is passed.
  */
-void ferGNGEuNodeWithHighestError2(fer_gng_eu_t *gng_eu,
-                                 fer_gng_eu_node_t **n1, fer_gng_eu_node_t **n2,
-                                 fer_gng_eu_edge_t **edge);
+void svoGNGEuNodeWithHighestError2(svo_gng_eu_t *gng_eu,
+                                 svo_gng_eu_node_t **n1, svo_gng_eu_node_t **n2,
+                                 svo_gng_eu_edge_t **edge);
 
-void ferGNGEuDumpSVT(fer_gng_eu_t *gng_eu, FILE *out, const char *name);
+void svoGNGEuDumpSVT(svo_gng_eu_t *gng_eu, FILE *out, const char *name);
 
 
 /**
  * Net Related API
  * ----------------
  *
- * See fer_gng_eu_node_t.
- * See fer_gng_eu_edge_t.
+ * See svo_gng_eu_node_t.
+ * See svo_gng_eu_edge_t.
  */
 
 /**
  * Returns net of nodes.
  */
-_fer_inline fer_net_t *ferGNGEuNet(fer_gng_eu_t *gng_eu);
+_bor_inline bor_net_t *svoGNGEuNet(svo_gng_eu_t *gng_eu);
 
 /**
  * Returns list of nodes.
  */
-_fer_inline fer_list_t *ferGNGEuNodes(fer_gng_eu_t *gng_eu);
+_bor_inline bor_list_t *svoGNGEuNodes(svo_gng_eu_t *gng_eu);
 
 /**
  * Returns number of nodes in net.
  */
-_fer_inline size_t ferGNGEuNodesLen(const fer_gng_eu_t *gng_eu);
+_bor_inline size_t svoGNGEuNodesLen(const svo_gng_eu_t *gng_eu);
 
 /**
  * Returns list of edges.
  */
-_fer_inline fer_list_t *ferGNGEuNodes(fer_gng_eu_t *gng_eu);
+_bor_inline bor_list_t *svoGNGEuNodes(svo_gng_eu_t *gng_eu);
 
 /**
  * Returns number of edges in net.
  */
-_fer_inline size_t ferGNGEuEdgesLen(const fer_gng_eu_t *gng_eu);
+_bor_inline size_t svoGNGEuEdgesLen(const svo_gng_eu_t *gng_eu);
 
 /**
  * Returns list of nodes
  */
-_fer_inline fer_list_t *ferGNGEuEdges(fer_gng_eu_t *gng_eu);
+_bor_inline bor_list_t *svoGNGEuEdges(svo_gng_eu_t *gng_eu);
 
 /**
  * Returns GNGEu node from list pointer.
  *
  * Usage:
  * ~~~~~
- * fer_list_t *list, *item;
- * fer_gng_eu_node_t *n;
+ * bor_list_t *list, *item;
+ * svo_gng_eu_node_t *n;
  *
- * list = ferGNGEuNodes(gng_eu);
- * FER_LIST_FOR_EACH(list, item){
- *     n = ferGNGEuNodeFromList(item);
+ * list = svoGNGEuNodes(gng_eu);
+ * BOR_LIST_FOR_EACH(list, item){
+ *     n = svoGNGEuNodeFromList(item);
  *     ....
  * }
  */
-_fer_inline fer_gng_eu_node_t *ferGNGEuNodeFromList(fer_list_t *item);
+_bor_inline svo_gng_eu_node_t *svoGNGEuNodeFromList(bor_list_t *item);
 
 /**
- * Similar to *ferGNGEuNodeFromList()* but works with nodes.
+ * Similar to *svoGNGEuNodeFromList()* but works with nodes.
  */
-_fer_inline fer_gng_eu_edge_t *ferGNGEuEdgeFromList(fer_list_t *item);
+_bor_inline svo_gng_eu_edge_t *svoGNGEuEdgeFromList(bor_list_t *item);
 
 /**
  * Cast Net node to GNGEu node.
  */
-_fer_inline fer_gng_eu_node_t *ferGNGEuNodeFromNet(fer_net_node_t *n);
+_bor_inline svo_gng_eu_node_t *svoGNGEuNodeFromNet(bor_net_node_t *n);
 
 /**
  * Cast Net edge to GNGEu edge.
  */
-_fer_inline fer_gng_eu_edge_t *ferGNGEuEdgeFromNet(fer_net_edge_t *e);
+_bor_inline svo_gng_eu_edge_t *svoGNGEuEdgeFromNet(bor_net_edge_t *e);
 
 /**
  * Cast GNGEu node to Net node.
  */
-_fer_inline fer_net_node_t *ferGNGEuNodeToNet(fer_gng_eu_node_t *n);
+_bor_inline bor_net_node_t *svoGNGEuNodeToNet(svo_gng_eu_node_t *n);
 
 /**
  * Cast GNGEu edge to Net edge.
  */
-_fer_inline fer_net_edge_t *ferGNGEuEdgeToNet(fer_gng_eu_edge_t *e);
+_bor_inline bor_net_edge_t *svoGNGEuEdgeToNet(svo_gng_eu_edge_t *e);
 
 
 
@@ -345,51 +345,51 @@ _fer_inline fer_net_edge_t *ferGNGEuEdgeToNet(fer_gng_eu_edge_t *e);
  * Node API
  * ^^^^^^^^^
  *
- * See fer_gng_eu_node_t.
+ * See svo_gng_eu_node_t.
  */
 
 /**
  * Adds node into network
  */
-_fer_inline void ferGNGEuNodeAdd(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n,
-                                 const fer_vec_t *w);
+_bor_inline void svoGNGEuNodeAdd(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n,
+                                 const bor_vec_t *w);
 
 /**
  * Removes node from network
  */
-_fer_inline void ferGNGEuNodeRemove(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n);
+_bor_inline void svoGNGEuNodeRemove(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n);
 
 /**
  * Removes node from network and deletes it (ops.del_node is used).
  */
-_fer_inline void ferGNGEuNodeDel(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n);
+_bor_inline void svoGNGEuNodeDel(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n);
 
 /**
  * Fixes node's error counter, i.e. applies correct beta^(n * lambda)
  */
-_fer_inline void ferGNGEuNodeFixError(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n);
+_bor_inline void svoGNGEuNodeFixError(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n);
 
 /**
  * Increment error counter
  */
-_fer_inline void ferGNGEuNodeIncError(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n,
-                                    fer_real_t inc);
+_bor_inline void svoGNGEuNodeIncError(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n,
+                                    bor_real_t inc);
 /**
  * Scales error counter
  */
-_fer_inline void ferGNGEuNodeScaleError(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n,
-                                      fer_real_t scale);
+_bor_inline void svoGNGEuNodeScaleError(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n,
+                                      bor_real_t scale);
 
 /**
  * Disconnects node from net, i.e., deletes all incidenting edges.
  */
-void ferGNGEuNodeDisconnect(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n);
+void svoGNGEuNodeDisconnect(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n);
 
 /**
  * Connects new node at given position (is) and connects it with two
  * nearest nodes [ops.new_node(), ops.nearest()].
  */
-fer_gng_eu_node_t *ferGNGEuNodeNewAtPos(fer_gng_eu_t *gng_eu, const void *is);
+svo_gng_eu_node_t *svoGNGEuNodeNewAtPos(svo_gng_eu_t *gng_eu, const void *is);
 
 
 
@@ -398,168 +398,168 @@ fer_gng_eu_node_t *ferGNGEuNodeNewAtPos(fer_gng_eu_t *gng_eu, const void *is);
  * Edge API
  * ^^^^^^^^^
  *
- * See fer_gng_eu_edge_t.
+ * See svo_gng_eu_edge_t.
  */
 
 /**
  * Creates and initializes new edge between {n1} and {n2}.
  */
-fer_gng_eu_edge_t *ferGNGEuEdgeNew(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n1,
-                                              fer_gng_eu_node_t *n2);
+svo_gng_eu_edge_t *svoGNGEuEdgeNew(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n1,
+                                              svo_gng_eu_node_t *n2);
 
 /**
  * Deletes edge
  */
-void ferGNGEuEdgeDel(fer_gng_eu_t *gng_eu, fer_gng_eu_edge_t *edge);
+void svoGNGEuEdgeDel(svo_gng_eu_t *gng_eu, svo_gng_eu_edge_t *edge);
 
 /**
  * Returns age of edge.
  *
  * Always use this function instead of direct access to struct!
  */
-_fer_inline int ferGNGEuEdgeAge(const fer_gng_eu_t *gng_eu, const fer_gng_eu_edge_t *edge);
+_bor_inline int svoGNGEuEdgeAge(const svo_gng_eu_t *gng_eu, const svo_gng_eu_edge_t *edge);
 
 
 /**
  * Returns edge connecting {n1} and {n2}.
  */
-_fer_inline fer_gng_eu_edge_t *ferGNGEuEdgeBetween(fer_gng_eu_t *gng_eu,
-                                              fer_gng_eu_node_t *n1,
-                                              fer_gng_eu_node_t *n2);
+_bor_inline svo_gng_eu_edge_t *svoGNGEuEdgeBetween(svo_gng_eu_t *gng_eu,
+                                              svo_gng_eu_node_t *n1,
+                                              svo_gng_eu_node_t *n2);
 
 /**
  * Deletes edge between {n1} and {n2}.
  */
-void ferGNGEuEdgeBetweenDel(fer_gng_eu_t *gng_eu,
-                          fer_gng_eu_node_t *n1, fer_gng_eu_node_t *n2);
+void svoGNGEuEdgeBetweenDel(svo_gng_eu_t *gng_eu,
+                          svo_gng_eu_node_t *n1, svo_gng_eu_node_t *n2);
 
 /**
  * Returns (via {n1} and {n2}) incidenting nodes of edge
  */
-_fer_inline void ferGNGEuEdgeNodes(fer_gng_eu_edge_t *e,
-                                 fer_gng_eu_node_t **n1, fer_gng_eu_node_t **n2);
+_bor_inline void svoGNGEuEdgeNodes(svo_gng_eu_edge_t *e,
+                                 svo_gng_eu_node_t **n1, svo_gng_eu_node_t **n2);
 
 
 
 
 
 /**** INLINES ****/
-_fer_inline fer_net_t *ferGNGEuNet(fer_gng_eu_t *gng_eu)
+_bor_inline bor_net_t *svoGNGEuNet(svo_gng_eu_t *gng_eu)
 {
     return gng_eu->net;
 }
 
-_fer_inline fer_list_t *ferGNGEuNodes(fer_gng_eu_t *gng_eu)
+_bor_inline bor_list_t *svoGNGEuNodes(svo_gng_eu_t *gng_eu)
 {
-    return ferNetNodes(gng_eu->net);
+    return borNetNodes(gng_eu->net);
 }
 
-_fer_inline size_t ferGNGEuNodesLen(const fer_gng_eu_t *gng_eu)
+_bor_inline size_t svoGNGEuNodesLen(const svo_gng_eu_t *gng_eu)
 {
-    return ferNetNodesLen(gng_eu->net);
+    return borNetNodesLen(gng_eu->net);
 }
 
-_fer_inline fer_list_t *ferGNGEuEdges(fer_gng_eu_t *gng_eu)
+_bor_inline bor_list_t *svoGNGEuEdges(svo_gng_eu_t *gng_eu)
 {
-    return ferNetEdges(gng_eu->net);
+    return borNetEdges(gng_eu->net);
 }
 
-_fer_inline size_t ferGNGEuEdgesLen(const fer_gng_eu_t *gng_eu)
+_bor_inline size_t svoGNGEuEdgesLen(const svo_gng_eu_t *gng_eu)
 {
-    return ferNetEdgesLen(gng_eu->net);
+    return borNetEdgesLen(gng_eu->net);
 }
 
-_fer_inline fer_gng_eu_node_t *ferGNGEuNodeFromList(fer_list_t *item)
+_bor_inline svo_gng_eu_node_t *svoGNGEuNodeFromList(bor_list_t *item)
 {
-    fer_net_node_t *nn;
-    fer_gng_eu_node_t *n;
+    bor_net_node_t *nn;
+    svo_gng_eu_node_t *n;
 
-    nn = FER_LIST_ENTRY(item, fer_net_node_t, list);
-    n  = fer_container_of(nn, fer_gng_eu_node_t, node);
+    nn = BOR_LIST_ENTRY(item, bor_net_node_t, list);
+    n  = bor_container_of(nn, svo_gng_eu_node_t, node);
     return n;
 }
 
-_fer_inline fer_gng_eu_edge_t *ferGNGEuEdgeFromList(fer_list_t *item)
+_bor_inline svo_gng_eu_edge_t *svoGNGEuEdgeFromList(bor_list_t *item)
 {
-    fer_net_edge_t *nn;
-    fer_gng_eu_edge_t *n;
+    bor_net_edge_t *nn;
+    svo_gng_eu_edge_t *n;
 
-    nn = FER_LIST_ENTRY(item, fer_net_edge_t, list);
-    n  = fer_container_of(nn, fer_gng_eu_edge_t, edge);
+    nn = BOR_LIST_ENTRY(item, bor_net_edge_t, list);
+    n  = bor_container_of(nn, svo_gng_eu_edge_t, edge);
     return n;
 }
 
-_fer_inline fer_gng_eu_node_t *ferGNGEuNodeFromNet(fer_net_node_t *n)
+_bor_inline svo_gng_eu_node_t *svoGNGEuNodeFromNet(bor_net_node_t *n)
 {
-    return fer_container_of(n, fer_gng_eu_node_t, node);
+    return bor_container_of(n, svo_gng_eu_node_t, node);
 }
 
-_fer_inline fer_gng_eu_edge_t *ferGNGEuEdgeFromNet(fer_net_edge_t *e)
+_bor_inline svo_gng_eu_edge_t *svoGNGEuEdgeFromNet(bor_net_edge_t *e)
 {
-    return fer_container_of(e, fer_gng_eu_edge_t, edge);
+    return bor_container_of(e, svo_gng_eu_edge_t, edge);
 }
 
-_fer_inline fer_net_node_t *ferGNGEuNodeToNet(fer_gng_eu_node_t *n)
+_bor_inline bor_net_node_t *svoGNGEuNodeToNet(svo_gng_eu_node_t *n)
 {
     return &n->node;
 }
 
-_fer_inline fer_net_edge_t *ferGNGEuEdgeToNet(fer_gng_eu_edge_t *e)
+_bor_inline bor_net_edge_t *svoGNGEuEdgeToNet(svo_gng_eu_edge_t *e)
 {
     return &e->edge;
 }
 
 
 
-_fer_inline void ferGNGEuNodeAdd(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n,
-                                 const fer_vec_t *w)
+_bor_inline void svoGNGEuNodeAdd(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n,
+                                 const bor_vec_t *w)
 {
-    n->err       = FER_ZERO;
+    n->err       = BOR_ZERO;
     n->err_cycle = gng_eu->cycle;
-    ferPairHeapAdd(gng_eu->err_heap, &n->err_heap);
+    borPairHeapAdd(gng_eu->err_heap, &n->err_heap);
 
-    ferNetAddNode(gng_eu->net, &n->node);
+    borNetAddNode(gng_eu->net, &n->node);
 
     if (gng_eu->params.dim == 2){
-        n->w = (fer_vec_t *)ferVec2Clone((const fer_vec2_t *)w);
+        n->w = (bor_vec_t *)borVec2Clone((const bor_vec2_t *)w);
     }else if (gng_eu->params.dim == 3){
-        n->w = (fer_vec_t *)ferVec3Clone((const fer_vec3_t *)w);
+        n->w = (bor_vec_t *)borVec3Clone((const bor_vec3_t *)w);
     }else{
-        n->w = ferVecClone(gng_eu->params.dim, (const fer_vec_t *)w);
+        n->w = borVecClone(gng_eu->params.dim, (const bor_vec_t *)w);
     }
 
     if (gng_eu->nn){
-        ferNNElInit(gng_eu->nn, &n->nn, n->w);
-        ferNNAdd(gng_eu->nn, &n->nn);
+        borNNElInit(gng_eu->nn, &n->nn, n->w);
+        borNNAdd(gng_eu->nn, &n->nn);
     }
 }
 
-_fer_inline void ferGNGEuNodeRemove(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n)
+_bor_inline void svoGNGEuNodeRemove(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n)
 {
-    ferPairHeapRemove(gng_eu->err_heap, &n->err_heap);
+    borPairHeapRemove(gng_eu->err_heap, &n->err_heap);
 
-    if (ferNetNodeEdgesLen(&n->node) != 0)
-        ferGNGEuNodeDisconnect(gng_eu, n);
-    ferNetRemoveNode(gng_eu->net, &n->node);
+    if (borNetNodeEdgesLen(&n->node) != 0)
+        svoGNGEuNodeDisconnect(gng_eu, n);
+    borNetRemoveNode(gng_eu->net, &n->node);
 
     if (gng_eu->nn){
-        ferNNRemove(gng_eu->nn, &n->nn);
+        borNNRemove(gng_eu->nn, &n->nn);
     }
 
-    ferVecDel(n->w);
+    borVecDel(n->w);
 }
 
-_fer_inline void ferGNGEuNodeDel(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n)
+_bor_inline void svoGNGEuNodeDel(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n)
 {
-    ferGNGEuNodeRemove(gng_eu, n);
+    svoGNGEuNodeRemove(gng_eu, n);
     if (gng_eu->ops.del_node){
         gng_eu->ops.del_node(n, gng_eu->ops.del_node_data);
     }else{
-        FER_FREE(n);
+        BOR_FREE(n);
     }
 }
 
-_fer_inline void ferGNGEuNodeFixError(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n)
+_bor_inline void svoGNGEuNodeFixError(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n)
 {
     unsigned long diff;
 
@@ -575,58 +575,58 @@ _fer_inline void ferGNGEuNodeFixError(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n
     n->err_cycle = gng_eu->cycle;
 }
 
-_fer_inline void ferGNGEuNodeIncError(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n,
-                                    fer_real_t inc)
+_bor_inline void svoGNGEuNodeIncError(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n,
+                                    bor_real_t inc)
 {
-    ferGNGEuNodeFixError(gng_eu, n);
+    svoGNGEuNodeFixError(gng_eu, n);
     n->err += inc;
-    ferPairHeapUpdate(gng_eu->err_heap, &n->err_heap);
+    borPairHeapUpdate(gng_eu->err_heap, &n->err_heap);
 }
 
-_fer_inline void ferGNGEuNodeScaleError(fer_gng_eu_t *gng_eu, fer_gng_eu_node_t *n,
-                                      fer_real_t scale)
+_bor_inline void svoGNGEuNodeScaleError(svo_gng_eu_t *gng_eu, svo_gng_eu_node_t *n,
+                                      bor_real_t scale)
 {
-    ferGNGEuNodeFixError(gng_eu, n);
+    svoGNGEuNodeFixError(gng_eu, n);
     n->err *= scale;
-    ferPairHeapUpdate(gng_eu->err_heap, &n->err_heap);
+    borPairHeapUpdate(gng_eu->err_heap, &n->err_heap);
 }
 
 
 
-_fer_inline int ferGNGEuEdgeAge(const fer_gng_eu_t *gng_eu, const fer_gng_eu_edge_t *edge)
+_bor_inline int svoGNGEuEdgeAge(const svo_gng_eu_t *gng_eu, const svo_gng_eu_edge_t *edge)
 {
     return edge->age;
 }
 
-_fer_inline fer_gng_eu_edge_t *ferGNGEuEdgeBetween(fer_gng_eu_t *gng_eu,
-                                              fer_gng_eu_node_t *n1,
-                                              fer_gng_eu_node_t *n2)
+_bor_inline svo_gng_eu_edge_t *svoGNGEuEdgeBetween(svo_gng_eu_t *gng_eu,
+                                              svo_gng_eu_node_t *n1,
+                                              svo_gng_eu_node_t *n2)
 {
-    fer_net_edge_t *ne;
-    fer_gng_eu_edge_t *e = NULL;
+    bor_net_edge_t *ne;
+    svo_gng_eu_edge_t *e = NULL;
 
-    ne = ferNetNodeCommonEdge(&n1->node, &n2->node);
+    ne = borNetNodeCommonEdge(&n1->node, &n2->node);
     if (ne)
-        e  = fer_container_of(ne, fer_gng_eu_edge_t, edge);
+        e  = bor_container_of(ne, svo_gng_eu_edge_t, edge);
     return e;
 }
 
-_fer_inline void ferGNGEuEdgeNodes(fer_gng_eu_edge_t *e,
-                                 fer_gng_eu_node_t **n1, fer_gng_eu_node_t **n2)
+_bor_inline void svoGNGEuEdgeNodes(svo_gng_eu_edge_t *e,
+                                 svo_gng_eu_node_t **n1, svo_gng_eu_node_t **n2)
 {
-    fer_net_node_t *n;
+    bor_net_node_t *n;
 
-    n   = ferNetEdgeNode(&e->edge, 0);
-    *n1 = fer_container_of(n, fer_gng_eu_node_t, node);
+    n   = borNetEdgeNode(&e->edge, 0);
+    *n1 = bor_container_of(n, svo_gng_eu_node_t, node);
 
-    n   = ferNetEdgeNode(&e->edge, 1);
-    *n2 = fer_container_of(n, fer_gng_eu_node_t, node);
+    n   = borNetEdgeNode(&e->edge, 1);
+    *n2 = bor_container_of(n, svo_gng_eu_node_t, node);
 }
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
 
-#endif /* __FER_GNG_EU_H__ */
+#endif /* __SVO_GNG_EU_H__ */
 
 

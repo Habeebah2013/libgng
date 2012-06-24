@@ -17,75 +17,75 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <fermat/alloc.h>
-#include <fermat/dbg.h>
-#include <fermat/sort.h>
-#include <fermat/gpc.h>
-#include <fermat/gpc-tree.h>
+#include <boruvka/alloc.h>
+#include <boruvka/dbg.h>
+#include <boruvka/sort.h>
+#include <svoboda/gpc.h>
+#include <svoboda/gpc-tree.h>
 
 
 /**
  * Definition of predicate
  */
-struct _fer_gpc_pred_t {
-    fer_gpc_pred pred;      /*!< Predicate callback */
-    fer_gpc_pred_init init; /*!< Initialization callback */
-    fer_gpc_pred_format format; /*!< Format callback */
+struct _svo_gpc_pred_t {
+    svo_gpc_pred pred;      /*!< Predicate callback */
+    svo_gpc_pred_init init; /*!< Initialization callback */
+    svo_gpc_pred_format format; /*!< Format callback */
     size_t memsize;         /*!< Size of allocated memory per predicate instance */
     int ndesc;              /*!< Number of descendants */
     void *data;             /*!< User data */
 };
-typedef struct _fer_gpc_pred_t fer_gpc_pred_t;
+typedef struct _svo_gpc_pred_t svo_gpc_pred_t;
 
 /**
  * Definition of class
  */
-struct _fer_gpc_class_t {
+struct _svo_gpc_class_t {
     int class; /*!< Class identifier */
 };
-typedef struct _fer_gpc_class_t fer_gpc_class_t;
+typedef struct _svo_gpc_class_t svo_gpc_class_t;
 
 
 /** Randomly generate a node with its subtree */
-static fer_gpc_node_t *ferGPCGenTree(fer_gpc_t *gpc, int depth, int max_depth);
-static fer_gpc_node_t *ferGPCGenClass(fer_gpc_t *gpc);
+static svo_gpc_node_t *svoGPCGenTree(svo_gpc_t *gpc, int depth, int max_depth);
+static svo_gpc_node_t *svoGPCGenClass(svo_gpc_t *gpc);
 /** Create randomly generated initial population in gpc->pop[pop] */
-static void ferGPCCreateInitPop(fer_gpc_t *gpc, int pop);
+static void svoGPCCreateInitPop(svo_gpc_t *gpc, int pop);
 /** Evals a tree with one data row. Returns resulting class as defined by
- *  ferGPCAddClass() function. */
-static int ferGPCEvalTreeClass(fer_gpc_t *gpc, fer_gpc_tree_t *tree, void *data);
+ *  svoGPCAddClass() function. */
+static int svoGPCEvalTreeClass(svo_gpc_t *gpc, svo_gpc_tree_t *tree, void *data);
 /** Evaluate a tree on all data rows and records a new fitness that is also
  *  returned */
-static fer_real_t ferGPCEvalTree(fer_gpc_t *gpc, fer_gpc_tree_t *tree,
+static bor_real_t svoGPCEvalTree(svo_gpc_t *gpc, svo_gpc_tree_t *tree,
                                  int res_arr);
 /** Evaluate whole population of decision trees */
-static void ferGPCEvalPop(fer_gpc_t *gpc, int pop);
+static void svoGPCEvalPop(svo_gpc_t *gpc, int pop);
 /** Sort whole population in descending order */
-static void ferGPCSortPop(fer_gpc_t *gpc, int pop);
+static void svoGPCSortPop(svo_gpc_t *gpc, int pop);
 /** Performs elitism */
-static void ferGPCKeepBest(fer_gpc_t *gpc, int from_pop, int to_pop);
+static void svoGPCKeepBest(svo_gpc_t *gpc, int from_pop, int to_pop);
 /** Throw away the worst individuals from given population */
-static void ferGPCThrowWorst(fer_gpc_t *gpc, int pop);
+static void svoGPCThrowWorst(svo_gpc_t *gpc, int pop);
 /** Create a new population */
-static void ferGPCCreateNewPop(fer_gpc_t *gpc, int from_pop, int to_pop);
+static void svoGPCCreateNewPop(svo_gpc_t *gpc, int from_pop, int to_pop);
 /** Reset speficied population, i.e., delete remaining individuals and
  *  truncate it to zero length. */
-static void ferGPCResetPop(fer_gpc_t *gpc, int pop);
+static void svoGPCResetPop(svo_gpc_t *gpc, int pop);
 /** Tournament selection */
-static int ferGPCSelectionTournament(fer_gpc_t *gpc, int tour_size,
-                                     fer_gpc_tree_t **pop, int pop_size);
+static int svoGPCSelectionTournament(svo_gpc_t *gpc, int tour_size,
+                                     svo_gpc_tree_t **pop, int pop_size);
 /** Genetic operators: */
-static void ferGPCReproduction(fer_gpc_t *gpc, int from_pop, int to_pop);
-static void ferGPCCrossover(fer_gpc_t *gpc, int from_pop, int to_pop);
-static void ferGPCMutation(fer_gpc_t *gpc, int from_pop, int to_pop);
+static void svoGPCReproduction(svo_gpc_t *gpc, int from_pop, int to_pop);
+static void svoGPCCrossover(svo_gpc_t *gpc, int from_pop, int to_pop);
+static void svoGPCMutation(svo_gpc_t *gpc, int from_pop, int to_pop);
 /** Reproduce a particular tree */
-static void ferGPCReproduction2(fer_gpc_t *gpc, int to_pop, fer_gpc_tree_t *tree);
+static void svoGPCReproduction2(svo_gpc_t *gpc, int to_pop, svo_gpc_tree_t *tree);
 
 /** Simplifies all trees in speficied population */
-static void ferGPCSimplify(fer_gpc_t *gpc, int pop);
-static void ferGPCPruneDeep(fer_gpc_t *gpc, int pop);
+static void svoGPCSimplify(svo_gpc_t *gpc, int pop);
+static void svoGPCPruneDeep(svo_gpc_t *gpc, int pop);
 /** Removes all duplicates from the population */
-static void ferGPCRemoveDuplicates(fer_gpc_t *gpc, int pop);
+static void svoGPCRemoveDuplicates(svo_gpc_t *gpc, int pop);
 
 #define OPS_DATA(name) \
     if (!gpc->ops.name ## _data) \
@@ -102,12 +102,12 @@ static void ferGPCRemoveDuplicates(fer_gpc_t *gpc, int pop);
     OPS_CHECK(name)
 
 
-void ferGPCOpsInit(fer_gpc_ops_t *ops)
+void svoGPCOpsInit(svo_gpc_ops_t *ops)
 {
     memset(ops, 0, sizeof(*ops));
 }
 
-void ferGPCParamsInit(fer_gpc_params_t *params)
+void svoGPCParamsInit(svo_gpc_params_t *params)
 {
     params->pop_size    = 1;
     params->max_depth   = 5;
@@ -133,13 +133,13 @@ void ferGPCParamsInit(fer_gpc_params_t *params)
 
 
 
-fer_gpc_t *ferGPCNew(const fer_gpc_ops_t *ops, const fer_gpc_params_t *params)
+svo_gpc_t *svoGPCNew(const svo_gpc_ops_t *ops, const svo_gpc_params_t *params)
 {
-    fer_gpc_t *gpc;
-    fer_real_t prob;
+    svo_gpc_t *gpc;
+    bor_real_t prob;
     int i;
 
-    gpc = FER_ALLOC(fer_gpc_t);
+    gpc = BOR_ALLOC(svo_gpc_t);
 
     gpc->params = *params;
     prob = gpc->params.pr + gpc->params.pc + gpc->params.pm;
@@ -152,86 +152,86 @@ fer_gpc_t *ferGPCNew(const fer_gpc_ops_t *ops, const fer_gpc_params_t *params)
     OPS_CHECK_DATA(data_row);
     OPS_DATA(callback);
 
-    gpc->rand = ferRandMTNewAuto();
-    //gpc->rand = ferRandMTNew(9999);
+    gpc->rand = borRandMTNewAuto();
+    //gpc->rand = borRandMTNew(9999);
 
-    gpc->pop[0] = FER_ALLOC_ARR(fer_gpc_tree_t *, gpc->params.pop_size);
-    gpc->pop[1] = FER_ALLOC_ARR(fer_gpc_tree_t *, gpc->params.pop_size);
-    gpc->pop[2] = FER_ALLOC_ARR(fer_gpc_tree_t *, gpc->params.pop_size);
-    memset(gpc->pop[0], 0, sizeof(fer_gpc_tree_t *) * gpc->params.pop_size);
-    memset(gpc->pop[1], 0, sizeof(fer_gpc_tree_t *) * gpc->params.pop_size);
+    gpc->pop[0] = BOR_ALLOC_ARR(svo_gpc_tree_t *, gpc->params.pop_size);
+    gpc->pop[1] = BOR_ALLOC_ARR(svo_gpc_tree_t *, gpc->params.pop_size);
+    gpc->pop[2] = BOR_ALLOC_ARR(svo_gpc_tree_t *, gpc->params.pop_size);
+    memset(gpc->pop[0], 0, sizeof(svo_gpc_tree_t *) * gpc->params.pop_size);
+    memset(gpc->pop[1], 0, sizeof(svo_gpc_tree_t *) * gpc->params.pop_size);
     gpc->pop_size[0] = gpc->pop_size[1] = 0;
 
-    gpc->pred_size = FER_GPC_PRED_INIT_SIZE;
+    gpc->pred_size = SVO_GPC_PRED_INIT_SIZE;
     gpc->pred_len  = 0;
-    gpc->pred      = FER_ALLOC_ARR(fer_gpc_pred_t, gpc->pred_size);
+    gpc->pred      = BOR_ALLOC_ARR(svo_gpc_pred_t, gpc->pred_size);
 
-    gpc->class_size = FER_GPC_CLASS_INIT_SIZE;
+    gpc->class_size = SVO_GPC_CLASS_INIT_SIZE;
     gpc->class_len  = 0;
-    gpc->class      = FER_ALLOC_ARR(fer_gpc_class_t, gpc->class_size);
+    gpc->class      = BOR_ALLOC_ARR(svo_gpc_class_t, gpc->class_size);
 
 
     gpc->threads = (params->parallel > 1 ? params->parallel : 1);
 
-    gpc->eval_results = FER_ALLOC_ARR(int *, gpc->threads);
+    gpc->eval_results = BOR_ALLOC_ARR(int *, gpc->threads);
     for (i = 0; i < gpc->threads; i++){
-        gpc->eval_results[i] = FER_ALLOC_ARR(int, gpc->params.data_rows);
+        gpc->eval_results[i] = BOR_ALLOC_ARR(int, gpc->params.data_rows);
     }
 
     gpc->tasks = 0;
     if (gpc->threads > 1){
-        gpc->tasks = ferTasksNew(gpc->threads);
-        ferTasksRun(gpc->tasks);
+        gpc->tasks = borTasksNew(gpc->threads);
+        borTasksRun(gpc->tasks);
     }
 
     return gpc;
 }
 
-void ferGPCDel(fer_gpc_t *gpc)
+void svoGPCDel(svo_gpc_t *gpc)
 {
     int i;
 
-    ferRandMTDel(gpc->rand);
+    borRandMTDel(gpc->rand);
 
     for (i = 0; i < gpc->params.pop_size; i++){
         if (gpc->pop[0][i] != NULL)
-            ferGPCTreeDel(gpc->pop[0][i]);
+            svoGPCTreeDel(gpc->pop[0][i]);
         if (gpc->pop[1][i] != NULL)
-            ferGPCTreeDel(gpc->pop[1][i]);
+            svoGPCTreeDel(gpc->pop[1][i]);
     }
-    FER_FREE(gpc->pop[0]);
-    FER_FREE(gpc->pop[1]);
-    FER_FREE(gpc->pop[2]);
+    BOR_FREE(gpc->pop[0]);
+    BOR_FREE(gpc->pop[1]);
+    BOR_FREE(gpc->pop[2]);
 
-    FER_FREE(gpc->pred);
-    FER_FREE(gpc->class);
+    BOR_FREE(gpc->pred);
+    BOR_FREE(gpc->class);
 
     for (i = 0; i < gpc->threads; i++){
-        FER_FREE(gpc->eval_results[i]);
+        BOR_FREE(gpc->eval_results[i]);
     }
-    FER_FREE(gpc->eval_results);
+    BOR_FREE(gpc->eval_results);
 
     if (gpc->tasks)
-        ferTasksDel(gpc->tasks);
+        borTasksDel(gpc->tasks);
 
-    FER_FREE(gpc);
+    BOR_FREE(gpc);
 }
 
-int ferGPCMaxDepth(const fer_gpc_t *gpc)
+int svoGPCMaxDepth(const svo_gpc_t *gpc)
 {
     return gpc->params.max_depth;
 }
 
-int ferGPCAddPred(fer_gpc_t *gpc,
-                  fer_gpc_pred pred,
-                  fer_gpc_pred_init init,
-                  fer_gpc_pred_format format,
+int svoGPCAddPred(svo_gpc_t *gpc,
+                  svo_gpc_pred pred,
+                  svo_gpc_pred_init init,
+                  svo_gpc_pred_format format,
                   int num_descendants, size_t memsize,
                   void *data)
 {
     if (gpc->pred_len >= gpc->pred_size){
         gpc->pred_size *= 2;
-        gpc->pred = FER_REALLOC_ARR(gpc->pred, fer_gpc_pred_t, gpc->pred_size);
+        gpc->pred = BOR_REALLOC_ARR(gpc->pred, svo_gpc_pred_t, gpc->pred_size);
     }
 
     gpc->pred[gpc->pred_len].pred    = pred;
@@ -245,11 +245,11 @@ int ferGPCAddPred(fer_gpc_t *gpc,
     return 0;
 }
 
-int ferGPCAddClass(fer_gpc_t *gpc, int class_id)
+int svoGPCAddClass(svo_gpc_t *gpc, int class_id)
 {
     if (gpc->class_len >= gpc->class_size){
         gpc->class_size *= 2;
-        gpc->class = FER_REALLOC_ARR(gpc->class, fer_gpc_class_t, gpc->class_size);
+        gpc->class = BOR_REALLOC_ARR(gpc->class, svo_gpc_class_t, gpc->class_size);
     }
 
     gpc->class[gpc->class_len].class = class_id;
@@ -258,7 +258,7 @@ int ferGPCAddClass(fer_gpc_t *gpc, int class_id)
     return 0;
 }
 
-int __ferGPCPredMemsize(const fer_gpc_t *gpc, int idx)
+int __svoGPCPredMemsize(const svo_gpc_t *gpc, int idx)
 {
     return gpc->pred[idx].memsize;
 }
@@ -272,7 +272,7 @@ int __ferGPCPredMemsize(const fer_gpc_t *gpc, int idx)
         varname = 0UL; \
     }
 
-int ferGPCRun(fer_gpc_t *gpc)
+int svoGPCRun(svo_gpc_t *gpc)
 {
     unsigned long step, cb, simplify, prune_deep, rm_duplicates;
     unsigned long inc_max_depth;
@@ -291,10 +291,10 @@ int ferGPCRun(fer_gpc_t *gpc)
 
 
     // create initial population
-    ferGPCCreateInitPop(gpc, pop_cur);
+    svoGPCCreateInitPop(gpc, pop_cur);
 
     // evaluate initial population
-    ferGPCEvalPop(gpc, pop_cur);
+    svoGPCEvalPop(gpc, pop_cur);
 
     if (gpc->ops.callback){
         gpc->ops.callback(gpc, gpc->ops.callback_data);
@@ -307,26 +307,26 @@ int ferGPCRun(fer_gpc_t *gpc)
     inc_max_depth = 0UL;
     for (step = 0UL; step < gpc->params.max_steps; step += 1UL){
         // perform elitism and the opposite
-        ferGPCKeepBest(gpc, pop_cur, pop_other);
-        ferGPCThrowWorst(gpc, pop_cur);
+        svoGPCKeepBest(gpc, pop_cur, pop_other);
+        svoGPCThrowWorst(gpc, pop_cur);
 
         // create a new population
-        ferGPCCreateNewPop(gpc, pop_cur, pop_other);
+        svoGPCCreateNewPop(gpc, pop_cur, pop_other);
 
         // reset the old population
-        ferGPCResetPop(gpc, pop_cur);
+        svoGPCResetPop(gpc, pop_cur);
 
         // prune deep trees
-        PERIODIC_OP(prune_deep, ferGPCPruneDeep(gpc, pop_other));
+        PERIODIC_OP(prune_deep, svoGPCPruneDeep(gpc, pop_other));
 
         // simplify a new population
-        PERIODIC_OP(simplify, ferGPCSimplify(gpc, pop_other));
+        PERIODIC_OP(simplify, svoGPCSimplify(gpc, pop_other));
 
         // evaluate a new population
-        ferGPCEvalPop(gpc, pop_other);
+        svoGPCEvalPop(gpc, pop_other);
 
         // remove duplicates
-        PERIODIC_OP(rm_duplicates, ferGPCRemoveDuplicates(gpc, pop_other));
+        PERIODIC_OP(rm_duplicates, svoGPCRemoveDuplicates(gpc, pop_other));
 
         // increase max depth
         PERIODIC_OP(inc_max_depth,
@@ -334,7 +334,7 @@ int ferGPCRun(fer_gpc_t *gpc)
 
 
         // switch old and new population
-        FER_SWAP(pop_cur, pop_other, pop_tmp);
+        BOR_SWAP(pop_cur, pop_other, pop_tmp);
         gpc->pop_cur = pop_cur;
 
 
@@ -349,39 +349,39 @@ int ferGPCRun(fer_gpc_t *gpc)
     }
 
     // remove duplicates
-    ferGPCRemoveDuplicates(gpc, pop_other);
+    svoGPCRemoveDuplicates(gpc, pop_other);
 
     // simplify resulting population
-    ferGPCSimplify(gpc, gpc->pop_cur);
+    svoGPCSimplify(gpc, gpc->pop_cur);
 
     return 0;
 }
 
-fer_real_t ferGPCBestFitness(const fer_gpc_t *gpc)
+bor_real_t svoGPCBestFitness(const svo_gpc_t *gpc)
 {
     if (gpc->pop[gpc->pop_cur][0])
         return gpc->pop[gpc->pop_cur][0]->fitness;
-    return -FER_REAL_MAX;
+    return -BOR_REAL_MAX;
 }
 
-void *ferGPCTree(const fer_gpc_t *gpc, int i)
+void *svoGPCTree(const svo_gpc_t *gpc, int i)
 {
-    i = FER_MIN(i, gpc->pop_size[gpc->pop_cur] - 1);
+    i = BOR_MIN(i, gpc->pop_size[gpc->pop_cur] - 1);
     return (void *)gpc->pop[gpc->pop_cur][i];
 }
 
-int ferGPCTreeEval(fer_gpc_t *gpc, void *tree, void *data)
+int svoGPCTreeEval(svo_gpc_t *gpc, void *tree, void *data)
 {
-    return ferGPCEvalTreeClass(gpc, (fer_gpc_tree_t *)tree, data);
+    return svoGPCEvalTreeClass(gpc, (svo_gpc_tree_t *)tree, data);
 }
 
-int ferGPCTreeDepth(fer_gpc_t *gpc, void *tree)
+int svoGPCTreeDepth(svo_gpc_t *gpc, void *tree)
 {
-    return ((fer_gpc_tree_t *)tree)->depth;
+    return ((svo_gpc_tree_t *)tree)->depth;
 }
 
 
-static void printBest(fer_gpc_t *gpc, fer_gpc_node_t *node, FILE *fout,
+static void printBest(svo_gpc_t *gpc, svo_gpc_node_t *node, FILE *fout,
                       char *str, size_t str_maxlen, int depth)
 {
     int i, j;
@@ -422,29 +422,29 @@ static void printBest(fer_gpc_t *gpc, fer_gpc_node_t *node, FILE *fout,
 
 }
 
-void ferGPCTreePrintC(fer_gpc_t *gpc, void *_tree, const char *func_name, FILE *fout)
+void svoGPCTreePrintC(svo_gpc_t *gpc, void *_tree, const char *func_name, FILE *fout)
 {
-    fer_gpc_tree_t *tree = (fer_gpc_tree_t *)_tree;
+    svo_gpc_tree_t *tree = (svo_gpc_tree_t *)_tree;
     char str[1024];
 
     if (!tree)
         return;
 
-    fprintf(fout, "int %s(fer_real_t *data)\n{\n", func_name);
+    fprintf(fout, "int %s(bor_real_t *data)\n{\n", func_name);
     printBest(gpc, tree->root, fout, str, 1024, 1);
     fprintf(fout, "}\n");
 }
 
-void ferGPCStats(const fer_gpc_t *gpc, fer_gpc_stats_t *stats)
+void svoGPCStats(const svo_gpc_t *gpc, svo_gpc_stats_t *stats)
 {
     int i, pop;
-    fer_gpc_tree_t *tree;
+    svo_gpc_tree_t *tree;
 
     pop = gpc->pop_cur;
 
-    stats->min_fitness = FER_REAL_MAX;
-    stats->max_fitness = -FER_REAL_MAX;
-    stats->avg_fitness = FER_ZERO;
+    stats->min_fitness = BOR_REAL_MAX;
+    stats->max_fitness = -BOR_REAL_MAX;
+    stats->avg_fitness = BOR_ZERO;
     stats->min_nodes = INT_MAX;
     stats->max_nodes = 0;
     stats->avg_nodes = 0;
@@ -480,35 +480,35 @@ void ferGPCStats(const fer_gpc_t *gpc, fer_gpc_stats_t *stats)
     stats->med_fitness = gpc->pop[pop][gpc->pop_size[pop] / 2 + 1]->fitness;
     if (gpc->pop_size[pop] % 2 == 0){
         stats->med_fitness += gpc->pop[pop][gpc->pop_size[pop] / 2]->fitness;
-        stats->med_fitness /= FER_REAL(2.);
+        stats->med_fitness /= BOR_REAL(2.);
     }
 
     stats->elapsed = gpc->stats.elapsed;
 }
 
 
-static fer_gpc_node_t *ferGPCGenTree(fer_gpc_t *gpc, int depth, int max_depth)
+static svo_gpc_node_t *svoGPCGenTree(svo_gpc_t *gpc, int depth, int max_depth)
 {
-    fer_gpc_node_t *node;
+    svo_gpc_node_t *node;
     int idx, i;
 
     // Randomly choose a predicate or a class.
     // If max_depth is reached, generate only a class.
     if (depth == max_depth){
-        idx = ferGPCRandInt(gpc, 0, gpc->class_len);
+        idx = svoGPCRandInt(gpc, 0, gpc->class_len);
         idx += gpc->pred_len;
     }else{
-        idx = ferGPCRandInt(gpc, 0, gpc->pred_len + gpc->class_len);
+        idx = svoGPCRandInt(gpc, 0, gpc->pred_len + gpc->class_len);
     }
 
     if (idx >= gpc->pred_len){
         // create a new class node
         idx = idx - gpc->pred_len;
-        node = ferGPCNodeNew(idx, 0, 0);
+        node = svoGPCNodeNew(idx, 0, 0);
 
     }else{
         // create a new predicate node
-        node = ferGPCNodeNew(idx, gpc->pred[idx].ndesc,
+        node = svoGPCNodeNew(idx, gpc->pred[idx].ndesc,
                              gpc->pred[idx].memsize);
         // initialize it
         if (gpc->pred[idx].init){
@@ -518,21 +518,21 @@ static fer_gpc_node_t *ferGPCGenTree(fer_gpc_t *gpc, int depth, int max_depth)
 
         // and fill descendants
         for (i = 0; i < node->ndesc; i++){
-            node->desc[i] = ferGPCGenTree(gpc, depth + 1, max_depth);
+            node->desc[i] = svoGPCGenTree(gpc, depth + 1, max_depth);
         }
     }
 
     return node;
 }
-static fer_gpc_node_t *ferGPCGenClass(fer_gpc_t *gpc)
+static svo_gpc_node_t *svoGPCGenClass(svo_gpc_t *gpc)
 {
     int idx;
-    idx = ferGPCRandInt(gpc, 0, gpc->class_len);
-    return ferGPCNodeNew(idx, 0, 0);
+    idx = svoGPCRandInt(gpc, 0, gpc->class_len);
+    return svoGPCNodeNew(idx, 0, 0);
 }
 
 
-static void ferGPCCreateInitPop(fer_gpc_t *gpc, int pop)
+static void svoGPCCreateInitPop(svo_gpc_t *gpc, int pop)
 {
     int i, len;
     int pop_other;
@@ -544,21 +544,21 @@ static void ferGPCCreateInitPop(fer_gpc_t *gpc, int pop)
 
     len = gpc->params.pop_size;
     for (i = 0; i < len; i++){
-        gpc->pop[pop][i] = ferGPCTreeNew();
-        gpc->pop[pop][i]->root = ferGPCGenTree(gpc, 0, gpc->params.max_depth);
-        ferGPCTreeFix(gpc->pop[pop][i]);
+        gpc->pop[pop][i] = svoGPCTreeNew();
+        gpc->pop[pop][i]->root = svoGPCGenTree(gpc, 0, gpc->params.max_depth);
+        svoGPCTreeFix(gpc->pop[pop][i]);
         gpc->pop_size[pop]++;
 
         gpc->pop[pop_other][i] = NULL;
 
-        //ferGPCTreePrint(gpc->pop[0][i], stdout);
+        //svoGPCTreePrint(gpc->pop[0][i], stdout);
     }
 }
 
-static int ferGPCEvalTreeClass(fer_gpc_t *gpc, fer_gpc_tree_t *tree, void *data)
+static int svoGPCEvalTreeClass(svo_gpc_t *gpc, svo_gpc_tree_t *tree, void *data)
 {
-    fer_gpc_node_t *node;
-    fer_gpc_pred pred;
+    svo_gpc_node_t *node;
+    svo_gpc_pred pred;
     int dispatch;
 
     // traverse the decision tree
@@ -568,7 +568,7 @@ static int ferGPCEvalTreeClass(fer_gpc_t *gpc, fer_gpc_tree_t *tree, void *data)
 
         // find which descendant is used
         dispatch = pred(gpc, node->mem, data, gpc->pred[node->idx].data);
-        dispatch = FER_MIN(dispatch, node->ndesc - 1);
+        dispatch = BOR_MIN(dispatch, node->ndesc - 1);
 
         // descent to next node
         node = node->desc[dispatch];
@@ -577,7 +577,7 @@ static int ferGPCEvalTreeClass(fer_gpc_t *gpc, fer_gpc_tree_t *tree, void *data)
     return gpc->class[node->idx].class;
 }
 
-static fer_real_t ferGPCEvalTree(fer_gpc_t *gpc, fer_gpc_tree_t *tree,
+static bor_real_t svoGPCEvalTree(svo_gpc_t *gpc, svo_gpc_tree_t *tree,
                                  int res_arr)
 {
     int i, class;
@@ -588,7 +588,7 @@ static fer_real_t ferGPCEvalTree(fer_gpc_t *gpc, fer_gpc_tree_t *tree,
         data = gpc->ops.data_row(gpc, i, gpc->ops.data_row_data);
 
         // eval the tree on the data row
-        class = ferGPCEvalTreeClass(gpc, tree, data);
+        class = svoGPCEvalTreeClass(gpc, tree, data);
         gpc->eval_results[res_arr][i] = class;
     }
 
@@ -596,19 +596,19 @@ static fer_real_t ferGPCEvalTree(fer_gpc_t *gpc, fer_gpc_tree_t *tree,
     tree->fitness = gpc->ops.fitness(gpc, gpc->eval_results[res_arr],
                                      gpc->ops.fitness_data);
 
-    //ferGPCTreePrint(tree, stdout);
+    //svoGPCTreePrint(tree, stdout);
 
     return tree->fitness;
 }
 
 struct eval_pop_t {
-    fer_gpc_t *gpc;
+    svo_gpc_t *gpc;
     int pop;
 };
-static void ferGPCEvalPopTask(int id, void *data, const fer_tasks_thinfo_t *thinfo)
+static void svoGPCEvalPopTask(int id, void *data, const bor_tasks_thinfo_t *thinfo)
 {
     struct eval_pop_t *ev = (struct eval_pop_t *)data;
-    fer_gpc_t *gpc = ev->gpc;
+    svo_gpc_t *gpc = ev->gpc;
     int pop = ev->pop;
     int len, from, to, i;
 
@@ -620,11 +620,11 @@ static void ferGPCEvalPopTask(int id, void *data, const fer_tasks_thinfo_t *thin
     len = to - from;
 
     for (i = from; i < to; i++){
-        ferGPCEvalTree(gpc, gpc->pop[pop][i], id);
+        svoGPCEvalTree(gpc, gpc->pop[pop][i], id);
     }
 }
 
-static void ferGPCEvalPop(fer_gpc_t *gpc, int pop)
+static void svoGPCEvalPop(svo_gpc_t *gpc, int pop)
 {
     int i;
     struct eval_pop_t ev;
@@ -634,95 +634,95 @@ static void ferGPCEvalPop(fer_gpc_t *gpc, int pop)
         ev.pop = pop;
 
         for (i = 0; i < gpc->threads; i++){
-            ferTasksAdd(gpc->tasks, ferGPCEvalPopTask, i, (void *)&ev);
+            borTasksAdd(gpc->tasks, svoGPCEvalPopTask, i, (void *)&ev);
         }
-        ferTasksBarrier(gpc->tasks);
+        borTasksBarrier(gpc->tasks);
     }else{
         for (i = 0; i < gpc->pop_size[pop]; i++){
-            ferGPCEvalTree(gpc, gpc->pop[pop][i], 0);
+            svoGPCEvalTree(gpc, gpc->pop[pop][i], 0);
         }
     }
 
-    ferGPCSortPop(gpc, pop);
+    svoGPCSortPop(gpc, pop);
 }
 
-static void ferGPCSortPop(fer_gpc_t *gpc, int pop)
+static void svoGPCSortPop(svo_gpc_t *gpc, int pop)
 {
-    ferRadixSortPtr((void **)gpc->pop[pop], (void **)gpc->pop[2],
+    borRadixSortPtr((void **)gpc->pop[pop], (void **)gpc->pop[2],
                     gpc->pop_size[pop],
-                    fer_offsetof(fer_gpc_tree_t, fitness), 1);
+                    bor_offsetof(svo_gpc_tree_t, fitness), 1);
 }
 
-static void ferGPCKeepBest(fer_gpc_t *gpc, int from_pop, int to_pop)
+static void svoGPCKeepBest(svo_gpc_t *gpc, int from_pop, int to_pop)
 {
     int i;
 
     // copy the best individuals
     for (i = 0; i < gpc->params.keep_best; i++){
         if (gpc->pop[from_pop][i] != NULL)
-            ferGPCReproduction2(gpc, to_pop, gpc->pop[from_pop][i]);
+            svoGPCReproduction2(gpc, to_pop, gpc->pop[from_pop][i]);
     }
 }
 
-static void ferGPCThrowWorst(fer_gpc_t *gpc, int pop)
+static void svoGPCThrowWorst(svo_gpc_t *gpc, int pop)
 {
-    fer_gpc_tree_t *tree;
+    svo_gpc_tree_t *tree;
     int i;
 
     // throw the worst
     for (i = 0; i < gpc->params.throw_worst; i++){
         tree = gpc->pop[pop][gpc->pop_size[pop] - i - 1];
         if (tree != NULL)
-            ferGPCTreeDel(tree);
+            svoGPCTreeDel(tree);
         gpc->pop[pop][gpc->pop_size[pop] - i - 1] = NULL;
     }
     gpc->pop_size[pop] -= gpc->params.throw_worst;
 }
 
 
-static void ferGPCCreateNewPop(fer_gpc_t *gpc, int from_pop, int to_pop)
+static void svoGPCCreateNewPop(svo_gpc_t *gpc, int from_pop, int to_pop)
 {
-    fer_real_t action;
+    bor_real_t action;
 
     while (gpc->pop_size[to_pop] < gpc->params.pop_size
             && gpc->pop_size[from_pop] > 0){
         // choose action
-        action = ferGPCRand01(gpc);
+        action = svoGPCRand01(gpc);
 
         if (action < gpc->params.pr){
             // reproduction
-            ferGPCReproduction(gpc, from_pop, to_pop);
+            svoGPCReproduction(gpc, from_pop, to_pop);
         }else if (action < gpc->params.pr + gpc->params.pc){
             // crossover
-            ferGPCCrossover(gpc, from_pop, to_pop);
+            svoGPCCrossover(gpc, from_pop, to_pop);
         }else{
             // mutation
-            ferGPCMutation(gpc, from_pop, to_pop);
+            svoGPCMutation(gpc, from_pop, to_pop);
         }
     }
 }
 
-static void ferGPCResetPop(fer_gpc_t *gpc, int pop)
+static void svoGPCResetPop(svo_gpc_t *gpc, int pop)
 {
     int i;
 
     for (i = 0; i < gpc->pop_size[pop]; i++){
         if (gpc->pop[pop][i])
-            ferGPCTreeDel(gpc->pop[pop][i]);
+            svoGPCTreeDel(gpc->pop[pop][i]);
         gpc->pop[pop][i] = NULL;
     }
     gpc->pop_size[pop] = 0;
 }
 
-static int ferGPCSelectionTournament(fer_gpc_t *gpc, int tour_size,
-                                     fer_gpc_tree_t **pop, int pop_size)
+static int svoGPCSelectionTournament(svo_gpc_t *gpc, int tour_size,
+                                     svo_gpc_tree_t **pop, int pop_size)
 {
-    fer_real_t best_fitness;
+    bor_real_t best_fitness;
     int i, sel, best = 0;
 
-    best_fitness = -FER_REAL_MAX;
+    best_fitness = -BOR_REAL_MAX;
     for (i = 0; i < tour_size; i++){
-        sel = ferGPCRandInt(gpc, 0, pop_size);
+        sel = svoGPCRandInt(gpc, 0, pop_size);
         if (pop[sel]->fitness > best_fitness){
             best = sel;
         }
@@ -731,42 +731,42 @@ static int ferGPCSelectionTournament(fer_gpc_t *gpc, int tour_size,
     return best;
 }
 
-static void ferGPCReproduction(fer_gpc_t *gpc, int from_pop, int to_pop)
+static void svoGPCReproduction(svo_gpc_t *gpc, int from_pop, int to_pop)
 {
     int idx;
 
     // select an individual from population
-    idx = ferGPCSelectionTournament(gpc, gpc->params.tournament_size,
+    idx = svoGPCSelectionTournament(gpc, gpc->params.tournament_size,
                                     gpc->pop[from_pop], gpc->pop_size[from_pop]);
 
     // and copy the individual to other population
-    gpc->pop[to_pop][gpc->pop_size[to_pop]] = ferGPCTreeClone(gpc, gpc->pop[from_pop][idx]);
+    gpc->pop[to_pop][gpc->pop_size[to_pop]] = svoGPCTreeClone(gpc, gpc->pop[from_pop][idx]);
     gpc->pop_size[to_pop]++;
 }
 
-static void ferGPCReproduction2(fer_gpc_t *gpc, int to_pop, fer_gpc_tree_t *tree)
+static void svoGPCReproduction2(svo_gpc_t *gpc, int to_pop, svo_gpc_tree_t *tree)
 {
-    gpc->pop[to_pop][gpc->pop_size[to_pop]] = ferGPCTreeClone(gpc, tree);
+    gpc->pop[to_pop][gpc->pop_size[to_pop]] = svoGPCTreeClone(gpc, tree);
     gpc->pop_size[to_pop]++;
 }
 
-static void ferGPCCrossover(fer_gpc_t *gpc, int from_pop, int to_pop)
+static void svoGPCCrossover(svo_gpc_t *gpc, int from_pop, int to_pop)
 {
     int idx[2], node_idx[2];
     int depth[2];
     int i;
-    fer_gpc_node_t *node[2];
-    fer_gpc_node_t **desc[2];
-    fer_gpc_tree_t *tree[2];
+    svo_gpc_node_t *node[2];
+    svo_gpc_node_t **desc[2];
+    svo_gpc_tree_t *tree[2];
 
     if (gpc->pop_size[from_pop] < 2)
         return;
 
     // select two individuals from population
-    idx[0] = ferGPCSelectionTournament(gpc, gpc->params.tournament_size,
+    idx[0] = svoGPCSelectionTournament(gpc, gpc->params.tournament_size,
                                        gpc->pop[from_pop], gpc->pop_size[from_pop]);
     do {
-        idx[1] = ferGPCSelectionTournament(gpc, gpc->params.tournament_size,
+        idx[1] = svoGPCSelectionTournament(gpc, gpc->params.tournament_size,
                                            gpc->pop[from_pop], gpc->pop_size[from_pop]);
     } while (idx[0] == idx[1]);
 
@@ -774,21 +774,21 @@ static void ferGPCCrossover(fer_gpc_t *gpc, int from_pop, int to_pop)
         tree[i] = gpc->pop[from_pop][idx[i]];
 
         // choose crossover nodes
-        node_idx[i] = ferGPCRandInt(gpc, 0, tree[i]->num_nodes);
+        node_idx[i] = svoGPCRandInt(gpc, 0, tree[i]->num_nodes);
 
         // obtain those nodes
-        node[i] = ferGPCTreeNodeById(tree[i], node_idx[i], &desc[i], &depth[i]);
+        node[i] = svoGPCTreeNodeById(tree[i], node_idx[i], &desc[i], &depth[i]);
     }
 
     // switch the subtrees
     *desc[0] = node[1];
     *desc[1] = node[0];
-    ferGPCTreeFix(tree[0]);
-    ferGPCTreeFix(tree[1]);
+    svoGPCTreeFix(tree[0]);
+    svoGPCTreeFix(tree[1]);
 
 
     if (idx[0] < idx[1]){
-        FER_SWAP(idx[0], idx[1], i);
+        BOR_SWAP(idx[0], idx[1], i);
     }
 
 
@@ -796,9 +796,9 @@ static void ferGPCCrossover(fer_gpc_t *gpc, int from_pop, int to_pop)
     for (i = 0; i < 2; i++){
         if (gpc->pop_size[to_pop] >= gpc->params.pop_size){
             // delete a tree if the population is full
-            ferGPCTreeDel(tree[i]);
+            svoGPCTreeDel(tree[i]);
         }else{
-            //ferGPCTreePrint(tree[i], stderr);
+            //svoGPCTreePrint(tree[i], stderr);
             gpc->pop[to_pop][gpc->pop_size[to_pop]] = tree[i];
             gpc->pop_size[to_pop]++;
         }
@@ -811,31 +811,31 @@ static void ferGPCCrossover(fer_gpc_t *gpc, int from_pop, int to_pop)
 }
 
 
-static void ferGPCMutation(fer_gpc_t *gpc, int from_pop, int to_pop)
+static void svoGPCMutation(svo_gpc_t *gpc, int from_pop, int to_pop)
 {
     int idx, node_idx;
     int depth;
-    fer_gpc_tree_t *tree;
-    fer_gpc_node_t *node, **desc;
+    svo_gpc_tree_t *tree;
+    svo_gpc_node_t *node, **desc;
 
     // select an individual from population
-    idx = ferGPCSelectionTournament(gpc, gpc->params.tournament_size,
+    idx = svoGPCSelectionTournament(gpc, gpc->params.tournament_size,
                                     gpc->pop[from_pop], gpc->pop_size[from_pop]);
     tree = gpc->pop[from_pop][idx];
 
     do {
         // choose a node that will undergo a mutation
-        node_idx = ferGPCRandInt(gpc, 0, tree->num_nodes);
+        node_idx = svoGPCRandInt(gpc, 0, tree->num_nodes);
 
         // get a node from the tree
-        node = ferGPCTreeNodeById(tree, node_idx, &desc, &depth);
+        node = svoGPCTreeNodeById(tree, node_idx, &desc, &depth);
 
     } while (gpc->params.max_depth < depth);
 
     // delete an old subtree and generate a new one
-    ferGPCNodeDel(node);
-    *desc = ferGPCGenTree(gpc, 0, gpc->params.max_depth - depth);
-    ferGPCTreeFix(tree);
+    svoGPCNodeDel(node);
+    *desc = svoGPCGenTree(gpc, 0, gpc->params.max_depth - depth);
+    svoGPCTreeFix(tree);
 
     // copy the tree to destination array
     gpc->pop[to_pop][gpc->pop_size[to_pop]] = tree;
@@ -848,11 +848,11 @@ static void ferGPCMutation(fer_gpc_t *gpc, int from_pop, int to_pop)
 }
 
 
-static void ferGPCSimplifyDuplicatePred(fer_gpc_t *gpc, fer_gpc_node_t *node,
-                                        fer_gpc_node_t **desc, int desc_i)
+static void svoGPCSimplifyDuplicatePred(svo_gpc_t *gpc, svo_gpc_node_t *node,
+                                        svo_gpc_node_t **desc, int desc_i)
 {
     void *b1, *b2;
-    fer_gpc_node_t *rm;
+    svo_gpc_node_t *rm;
     size_t memsize;
 
     b1 = node->mem;
@@ -864,14 +864,14 @@ static void ferGPCSimplifyDuplicatePred(fer_gpc_t *gpc, fer_gpc_node_t *node,
 
         desc[desc_i]    = rm->desc[desc_i];
         rm->desc[desc_i] = NULL;
-        ferGPCNodeDel(rm);
+        svoGPCNodeDel(rm);
     }
 }
 
-static fer_gpc_node_t *ferGPCSimplifySubtree(fer_gpc_t *gpc, fer_gpc_node_t *node)
+static svo_gpc_node_t *svoGPCSimplifySubtree(svo_gpc_t *gpc, svo_gpc_node_t *node)
 {
     int i, idx;
-    fer_gpc_node_t *rnode;
+    svo_gpc_node_t *rnode;
 
     if (node->ndesc == 0)
         return node;
@@ -880,7 +880,7 @@ static fer_gpc_node_t *ferGPCSimplifySubtree(fer_gpc_t *gpc, fer_gpc_node_t *nod
     // first dive down in tree
     for (i = 0; i < node->ndesc; i++){
         if (node->desc[i]->ndesc > 0)
-            node->desc[i] = ferGPCSimplifySubtree(gpc, node->desc[i]);
+            node->desc[i] = svoGPCSimplifySubtree(gpc, node->desc[i]);
     }
 
     // check if all descendants are terminals and compare all their idx
@@ -889,7 +889,7 @@ static fer_gpc_node_t *ferGPCSimplifySubtree(fer_gpc_t *gpc, fer_gpc_node_t *nod
     for (i = 0; i < node->ndesc; i++){
         if (node->desc[i]->idx == node->idx
                 && node->desc[i]->ndesc == node->ndesc){
-            ferGPCSimplifyDuplicatePred(gpc, node, node->desc, i);
+            svoGPCSimplifyDuplicatePred(gpc, node, node->desc, i);
         }
 
         if (node->desc[i]->ndesc != 0 || idx != node->desc[i]->idx)
@@ -899,25 +899,25 @@ static fer_gpc_node_t *ferGPCSimplifySubtree(fer_gpc_t *gpc, fer_gpc_node_t *nod
     if (i == node->ndesc){
         rnode = node->desc[0];
         node->desc[0] = NULL;
-        ferGPCNodeDel(node);
+        svoGPCNodeDel(node);
         return rnode;
     }
 
     return node;
 }
 
-static void ferGPCSimplify(fer_gpc_t *gpc, int pop)
+static void svoGPCSimplify(svo_gpc_t *gpc, int pop)
 {
     int i;
 
     for (i = 0; i < gpc->pop_size[pop]; i++){
-        gpc->pop[pop][i]->root = ferGPCSimplifySubtree(gpc, gpc->pop[pop][i]->root);
-        ferGPCTreeFix(gpc->pop[pop][i]);
+        gpc->pop[pop][i]->root = svoGPCSimplifySubtree(gpc, gpc->pop[pop][i]->root);
+        svoGPCTreeFix(gpc->pop[pop][i]);
     }
 }
 
 
-static void ferGPCPruneDeepSubtree(fer_gpc_t *gpc, fer_gpc_node_t *node,
+static void svoGPCPruneDeepSubtree(svo_gpc_t *gpc, svo_gpc_node_t *node,
                                    int depth)
 {
     int i;
@@ -928,30 +928,30 @@ static void ferGPCPruneDeepSubtree(fer_gpc_t *gpc, fer_gpc_node_t *node,
     if (depth == gpc->params.max_depth - 1){
         for (i = 0; i < node->ndesc; i++){
             if (node->desc[i]->ndesc != 0){
-                ferGPCNodeDel(node->desc[i]);
-                node->desc[i] = ferGPCGenClass(gpc);
+                svoGPCNodeDel(node->desc[i]);
+                node->desc[i] = svoGPCGenClass(gpc);
             }
         }
     }else{
         for (i = 0; i < node->ndesc; i++){
             if (node->desc[i]->ndesc != 0){
-                ferGPCPruneDeepSubtree(gpc, node->desc[i], depth + 1);
+                svoGPCPruneDeepSubtree(gpc, node->desc[i], depth + 1);
             }
         }
     }
 }
 
-static void ferGPCPruneDeep(fer_gpc_t *gpc, int pop)
+static void svoGPCPruneDeep(svo_gpc_t *gpc, int pop)
 {
     int i;
 
     for (i = 0; i < gpc->pop_size[pop]; i++){
-        ferGPCPruneDeepSubtree(gpc, gpc->pop[pop][i]->root, 0);
-        ferGPCTreeFix(gpc->pop[pop][i]);
+        svoGPCPruneDeepSubtree(gpc, gpc->pop[pop][i]->root, 0);
+        svoGPCTreeFix(gpc->pop[pop][i]);
     }
 }
 
-static int eqTrees(fer_gpc_t *gpc, fer_gpc_node_t *n1, fer_gpc_node_t *n2)
+static int eqTrees(svo_gpc_t *gpc, svo_gpc_node_t *n1, svo_gpc_node_t *n2)
 {
     int i;
 
@@ -971,9 +971,9 @@ static int eqTrees(fer_gpc_t *gpc, fer_gpc_node_t *n1, fer_gpc_node_t *n2)
     return 1;
 }
 
-static void ferGPCRemoveDuplicates(fer_gpc_t *gpc, int pop)
+static void svoGPCRemoveDuplicates(svo_gpc_t *gpc, int pop)
 {
-    fer_gpc_tree_t *last, *tree;
+    svo_gpc_tree_t *last, *tree;
     int i;
 
     last = gpc->pop[pop][0];
@@ -981,9 +981,9 @@ static void ferGPCRemoveDuplicates(fer_gpc_t *gpc, int pop)
         tree = gpc->pop[pop][i];
         if (last->num_nodes == tree->num_nodes
                 && last->depth == tree->depth
-                && ferEq(last->fitness, tree->fitness)
+                && borEq(last->fitness, tree->fitness)
                 && !eqTrees(gpc, last->root, tree->root)){
-            ferGPCTreeDel(tree);
+            svoGPCTreeDel(tree);
             gpc->pop[pop][i] = NULL;
         }else{
             last = tree;
@@ -997,5 +997,5 @@ static void ferGPCRemoveDuplicates(fer_gpc_t *gpc, int pop)
             gpc->pop[pop][gpc->pop_size[pop]] = NULL;
         }
     }
-    ferGPCSortPop(gpc, pop);
+    svoGPCSortPop(gpc, pop);
 }

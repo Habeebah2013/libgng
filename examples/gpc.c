@@ -1,26 +1,26 @@
 #include <stdio.h>
-#include <fermat/gpc.h>
-#include <fermat/dbg.h>
-#include <fermat/alloc.h>
-#include <fermat/cfg.h>
-#include <fermat/opts.h>
+#include <svoboda/gpc.h>
+#include <boruvka/dbg.h>
+#include <boruvka/alloc.h>
+#include <boruvka/cfg.h>
+#include <boruvka/opts.h>
 
-fer_cfg_t *cfg = NULL;
+bor_cfg_t *cfg = NULL;
 
 int classes, cols;
 
 int train_rows;
-const fer_real_t *train_x;
+const bor_real_t *train_x;
 const int *train_y;
 size_t train_len;
 
 int test_rows;
-const fer_real_t *test_x;
+const bor_real_t *test_x;
 const int *test_y;
 size_t test_len;
 
-fer_gpc_ops_t ops;
-fer_gpc_params_t params;
+svo_gpc_ops_t ops;
+svo_gpc_params_t params;
 int help = 0;
 int verbose = 0;
 int output_results = 1;
@@ -31,58 +31,58 @@ FILE *log_fout = NULL;
 
 static int readCfg(const char *fn);
 
-static void *dataRow(fer_gpc_t *gpc, int i, void *_);
-static fer_real_t fitness(fer_gpc_t *gpc, int *class, void *_);
-static void callback(fer_gpc_t *gpc, void *_);
+static void *dataRow(svo_gpc_t *gpc, int i, void *_);
+static bor_real_t fitness(svo_gpc_t *gpc, int *class, void *_);
+static void callback(svo_gpc_t *gpc, void *_);
 
 struct cmp_t {
     int idx;
-    fer_real_t val;
+    bor_real_t val;
     int op; // 0 - '<', 1 - '>'
 };
-static void cmpInit(fer_gpc_t *gpc, void *mem, void *ud);
-static int cmpPred(fer_gpc_t *gpc, void *mem, void *data, void *ud);
-static void cmpFormat(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max);
+static void cmpInit(svo_gpc_t *gpc, void *mem, void *ud);
+static int cmpPred(svo_gpc_t *gpc, void *mem, void *data, void *ud);
+static void cmpFormat(svo_gpc_t *gpc, void *mem, void *ud, char *str, size_t max);
 
 struct cmp2_t {
     int idx1, idx2;
     int op; // 0 - '<', 1 - '>'
 };
-static void cmp2Init(fer_gpc_t *gpc, void *mem, void *ud);
-static int cmp2Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud);
-static void cmp2Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max);
+static void cmp2Init(svo_gpc_t *gpc, void *mem, void *ud);
+static int cmp2Pred(svo_gpc_t *gpc, void *mem, void *data, void *ud);
+static void cmp2Format(svo_gpc_t *gpc, void *mem, void *ud, char *str, size_t max);
 
 struct cmp3_t {
     int idx1, idx2;
-    fer_real_t val;
+    bor_real_t val;
     int op; // X0 - '<', X1 - '>' | 00X - '+', 01X - '-', 10X - '*', 11X - '/'
 };
-static void cmp3Init(fer_gpc_t *gpc, void *mem, void *ud);
-static int cmp3Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud);
-static void cmp3Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max);
+static void cmp3Init(svo_gpc_t *gpc, void *mem, void *ud);
+static int cmp3Pred(svo_gpc_t *gpc, void *mem, void *data, void *ud);
+static void cmp3Format(svo_gpc_t *gpc, void *mem, void *ud, char *str, size_t max);
 
 struct cmp4_t {
     int idx1, idx2, idx3;
     int op; // X0 - '<', X1 - '>' | 00X - '+', 01X - '-', 10X - '*', 11X - '/'
 };
-static void cmp4Init(fer_gpc_t *gpc, void *mem, void *ud);
-static int cmp4Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud);
-static void cmp4Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max);
+static void cmp4Init(svo_gpc_t *gpc, void *mem, void *ud);
+static int cmp4Pred(svo_gpc_t *gpc, void *mem, void *data, void *ud);
+static void cmp4Format(svo_gpc_t *gpc, void *mem, void *ud, char *str, size_t max);
 
-static void outputResults(fer_gpc_t *gpc);
+static void outputResults(svo_gpc_t *gpc);
 
 
 static int opts(int *argc, char *argv[])
 {
     int ok = 1;
 
-    ferGPCOpsInit(&ops);
+    svoGPCOpsInit(&ops);
     ops.fitness  = fitness;
     ops.data_row = dataRow;
     ops.callback = callback;
     ops.callback_period = 1;
 
-    ferGPCParamsInit(&params);
+    svoGPCParamsInit(&params);
     params.pop_size    = 200;
     params.max_depth   = 3;
     params.keep_best   = 1;//params.pop_size * 0.02;
@@ -103,58 +103,58 @@ static int opts(int *argc, char *argv[])
     params.parallel = 0;
 
 
-    ferOptsAddDesc("help", 0x0, FER_OPTS_NONE, (void *)&help, NULL,
+    borOptsAddDesc("help", 0x0, BOR_OPTS_NONE, (void *)&help, NULL,
                    "Print this help");
-    ferOptsAddDesc("verbose", 'v', FER_OPTS_NONE, &verbose, NULL,
+    borOptsAddDesc("verbose", 'v', BOR_OPTS_NONE, &verbose, NULL,
                    "Turn on verbose mode.");
-    ferOptsAddDesc("progress-period", 0x0, FER_OPTS_LONG, (long *)&ops.callback_period, NULL,
+    borOptsAddDesc("progress-period", 0x0, BOR_OPTS_LONG, (long *)&ops.callback_period, NULL,
                    "Set up period of progress refreshing.");
 
-    ferOptsAddDesc("output-results", 'o', FER_OPTS_INT, &output_results, NULL,
+    borOptsAddDesc("output-results", 'o', BOR_OPTS_INT, &output_results, NULL,
                    "Print specified number of best individuals. Default: 1");
-    ferOptsAddDesc("output-prefix", 'p', FER_OPTS_STR, &output_prefix, NULL,
+    borOptsAddDesc("output-prefix", 'p', BOR_OPTS_STR, &output_prefix, NULL,
                    "Set up prefix of output file. Default: `result'");
-    ferOptsAddDesc("log", 'l', FER_OPTS_STR, &log_fn, NULL,
+    borOptsAddDesc("log", 'l', BOR_OPTS_STR, &log_fn, NULL,
                    "Set up name of the log file. Default: none");
 
-    ferOptsAddDesc("pop-size", 0x0, FER_OPTS_INT, &params.pop_size, NULL,
+    borOptsAddDesc("pop-size", 0x0, BOR_OPTS_INT, &params.pop_size, NULL,
                    "Population size. Default: 200");
-    ferOptsAddDesc("max-depth", 0x0, FER_OPTS_INT, &params.max_depth, NULL,
+    borOptsAddDesc("max-depth", 0x0, BOR_OPTS_INT, &params.max_depth, NULL,
                    "Maximal depth of a tree individual. Default: 3");
-    ferOptsAddDesc("keep-best", 0x0, FER_OPTS_INT, &params.keep_best, NULL,
+    borOptsAddDesc("keep-best", 0x0, BOR_OPTS_INT, &params.keep_best, NULL,
                    "Keep specified number of the best individuals. Default: 1");
-    ferOptsAddDesc("throw-worst", 0x0, FER_OPTS_INT, &params.throw_worst, NULL,
+    borOptsAddDesc("throw-worst", 0x0, BOR_OPTS_INT, &params.throw_worst, NULL,
                    "Discard specified number of the worst individuals.  Default: 1");
-    ferOptsAddDesc("max-steps", 0x0, FER_OPTS_LONG, (long *)&params.max_steps, NULL,
+    borOptsAddDesc("max-steps", 0x0, BOR_OPTS_LONG, (long *)&params.max_steps, NULL,
                    "Maximal number of steps. Default: 2000");
-    ferOptsAddDesc("tour-size", 0x0, FER_OPTS_INT, &params.tournament_size, NULL,
+    borOptsAddDesc("tour-size", 0x0, BOR_OPTS_INT, &params.tournament_size, NULL,
                    "Size of tournament selection. Default: 3");
 
-    ferOptsAddDesc("pr", 0x0, FER_OPTS_REAL, &params.pr, NULL,
+    borOptsAddDesc("pr", 0x0, BOR_OPTS_REAL, &params.pr, NULL,
                    "Probability of reproduction. The number is considered "
                    "in comparison with --pc and --pm. Default: 10");
-    ferOptsAddDesc("pc", 0x0, FER_OPTS_REAL, &params.pc, NULL,
+    borOptsAddDesc("pc", 0x0, BOR_OPTS_REAL, &params.pc, NULL,
                    "Probability of crossover. Default: 30");
-    ferOptsAddDesc("pm", 0x0, FER_OPTS_REAL, &params.pm, NULL,
+    borOptsAddDesc("pm", 0x0, BOR_OPTS_REAL, &params.pm, NULL,
                    "Probability of mutation. Default: 10");
 
-    ferOptsAddDesc("simplify", 0x0, FER_OPTS_LONG, (long *)&params.simplify, NULL,
+    borOptsAddDesc("simplify", 0x0, BOR_OPTS_LONG, (long *)&params.simplify, NULL,
                    "All individuals are simplified every specified step.  Default: 100");
-    ferOptsAddDesc("prune-deep", 0x0, FER_OPTS_LONG, (long *)&params.prune_deep, NULL,
+    borOptsAddDesc("prune-deep", 0x0, BOR_OPTS_LONG, (long *)&params.prune_deep, NULL,
                    "Prune all deep trees every specified step. Default: 100");
-    ferOptsAddDesc("rm-dupl", 0x0, FER_OPTS_LONG, (long *)&params.rm_duplicates, NULL,
+    borOptsAddDesc("rm-dupl", 0x0, BOR_OPTS_LONG, (long *)&params.rm_duplicates, NULL,
                    "Remove duplicates every specified step. Default: 100");
-    ferOptsAddDesc("inc-max-depth", 0x0, FER_OPTS_LONG, (long *)&params.inc_max_depth, NULL,
+    borOptsAddDesc("inc-max-depth", 0x0, BOR_OPTS_LONG, (long *)&params.inc_max_depth, NULL,
                    "Increase a max. depth by --inc-max-depth-step value"
                    " every specified step. Default: 0");
-    ferOptsAddDesc("inc-max-depth-step", 0x0, FER_OPTS_INT, (int *)&params.inc_max_depth_step, NULL,
+    borOptsAddDesc("inc-max-depth-step", 0x0, BOR_OPTS_INT, (int *)&params.inc_max_depth_step, NULL,
                    "See --inc-max-depth. Default: 1");
 
-    ferOptsAddDesc("parallel", 0x0, FER_OPTS_INT, &params.parallel, NULL,
+    borOptsAddDesc("parallel", 0x0, BOR_OPTS_INT, &params.parallel, NULL,
                    "Set up number of parallel threads. Default: 0");
 
 
-    if (ferOpts(argc, argv) != 0)
+    if (borOpts(argc, argv) != 0)
         ok = 0;
 
     if (*argc != 2)
@@ -172,7 +172,7 @@ static int opts(int *argc, char *argv[])
     if (help || !ok){
         fprintf(stderr, "Usage: %s [ OPTIONS ] file.data\n", argv[0]);
         fprintf(stderr, "  OPTIONS:\n");
-        ferOptsPrint(stderr, "    ");
+        borOptsPrint(stderr, "    ");
         return -1;
     }
 
@@ -223,37 +223,37 @@ static int opts(int *argc, char *argv[])
 int main(int argc, char *argv[])
 {
     int res, i;
-    fer_gpc_t *gpc;
+    svo_gpc_t *gpc;
 
 
     if (opts(&argc, argv) != 0){
         return -1;
     }
 
-    gpc = ferGPCNew(&ops, &params);
+    gpc = svoGPCNew(&ops, &params);
 
     for (i = 0; i < classes; i++){
-        ferGPCAddClass(gpc, i);
+        svoGPCAddClass(gpc, i);
     }
 
-    ferGPCAddPred(gpc, cmpPred, cmpInit, cmpFormat, 2, sizeof(struct cmp_t), NULL);
-    ferGPCAddPred(gpc, cmp2Pred, cmp2Init, cmp2Format, 2, sizeof(struct cmp2_t), NULL);
-    ferGPCAddPred(gpc, cmp3Pred, cmp3Init, cmp3Format, 2, sizeof(struct cmp3_t), NULL);
-    ferGPCAddPred(gpc, cmp4Pred, cmp4Init, cmp4Format, 2, sizeof(struct cmp4_t), NULL);
+    svoGPCAddPred(gpc, cmpPred, cmpInit, cmpFormat, 2, sizeof(struct cmp_t), NULL);
+    svoGPCAddPred(gpc, cmp2Pred, cmp2Init, cmp2Format, 2, sizeof(struct cmp2_t), NULL);
+    svoGPCAddPred(gpc, cmp3Pred, cmp3Init, cmp3Format, 2, sizeof(struct cmp3_t), NULL);
+    svoGPCAddPred(gpc, cmp4Pred, cmp4Init, cmp4Format, 2, sizeof(struct cmp4_t), NULL);
 
-    res = ferGPCRun(gpc);
+    res = svoGPCRun(gpc);
     callback(gpc, NULL);
     fprintf(stderr, "\n");
-    fprintf(stdout, "Best fitness: %f\n", ferGPCBestFitness(gpc));
+    fprintf(stdout, "Best fitness: %f\n", svoGPCBestFitness(gpc));
 
     outputResults(gpc);
 
-    ferGPCDel(gpc);
+    svoGPCDel(gpc);
 
     if (cfg)
-        ferCfgDel(cfg);
+        borCfgDel(cfg);
 
-    ferOptsClear();
+    borOptsClear();
 
     if (log_fout)
         fclose(log_fout);
@@ -266,58 +266,58 @@ static int readCfg(const char *fn)
 {
     size_t len;
 
-    if ((cfg = ferCfgRead(fn)) == NULL)
+    if ((cfg = borCfgRead(fn)) == NULL)
         return -1;
 
-    if (!ferCfgParamIsInt(cfg, "classes")
-            || !ferCfgParamIsInt(cfg, "cols")
-            || !ferCfgParamIsInt(cfg, "train_rows")
-            || !ferCfgParamIsInt(cfg, "test_rows")
-            || !ferCfgParamIsFlt(cfg, "train_x")
-            || !ferCfgParamIsArr(cfg, "train_x")
-            || !ferCfgParamIsInt(cfg, "train_y")
-            || !ferCfgParamIsArr(cfg, "train_y")
-            || !ferCfgParamIsFlt(cfg, "test_x")
-            || !ferCfgParamIsArr(cfg, "test_x")
-            || !ferCfgParamIsInt(cfg, "test_y")
-            || !ferCfgParamIsArr(cfg, "test_y")
+    if (!borCfgParamIsInt(cfg, "classes")
+            || !borCfgParamIsInt(cfg, "cols")
+            || !borCfgParamIsInt(cfg, "train_rows")
+            || !borCfgParamIsInt(cfg, "test_rows")
+            || !borCfgParamIsFlt(cfg, "train_x")
+            || !borCfgParamIsArr(cfg, "train_x")
+            || !borCfgParamIsInt(cfg, "train_y")
+            || !borCfgParamIsArr(cfg, "train_y")
+            || !borCfgParamIsFlt(cfg, "test_x")
+            || !borCfgParamIsArr(cfg, "test_x")
+            || !borCfgParamIsInt(cfg, "test_y")
+            || !borCfgParamIsArr(cfg, "test_y")
        ){
-        ferCfgDel(cfg);
+        borCfgDel(cfg);
         return -1;
     }
 
-    ferCfgParamInt(cfg, "classes", &classes);
-    ferCfgParamInt(cfg, "cols", &cols);
+    borCfgParamInt(cfg, "classes", &classes);
+    borCfgParamInt(cfg, "cols", &cols);
 
-    ferCfgParamInt(cfg, "train_rows", &train_rows);
-    ferCfgParamFltArr(cfg, "train_x", &train_x, &len);
-    ferCfgParamIntArr(cfg, "train_y", &train_y, &train_len);
+    borCfgParamInt(cfg, "train_rows", &train_rows);
+    borCfgParamFltArr(cfg, "train_x", &train_x, &len);
+    borCfgParamIntArr(cfg, "train_y", &train_y, &train_len);
     if (len / cols != train_len){
         fprintf(stderr, "Error: len(train_x) != len(train_y) [%d != %d]\n",
                 (int)train_len, (int)(len / cols));
-        ferCfgDel(cfg);
+        borCfgDel(cfg);
         return -1;
     }
 
-    ferCfgParamInt(cfg, "test_rows", &test_rows);
-    ferCfgParamFltArr(cfg, "test_x", &test_x, &len);
-    ferCfgParamIntArr(cfg, "test_y", &test_y, &test_len);
+    borCfgParamInt(cfg, "test_rows", &test_rows);
+    borCfgParamFltArr(cfg, "test_x", &test_x, &len);
+    borCfgParamIntArr(cfg, "test_y", &test_y, &test_len);
     if (len / cols != test_len){
         fprintf(stderr, "Error: len(test_x) != len(test_y) [%d != %d]\n",
                 (int)test_len, (int)(len / cols));
-        ferCfgDel(cfg);
+        borCfgDel(cfg);
         return -1;
     }
 
     return 0;
 }
 
-static void *dataRow(fer_gpc_t *gpc, int i, void *_)
+static void *dataRow(svo_gpc_t *gpc, int i, void *_)
 {
     return (void *)(train_x + (i * cols));
 }
 
-static fer_real_t fitness(fer_gpc_t *gpc, int *class, void *_)
+static bor_real_t fitness(svo_gpc_t *gpc, int *class, void *_)
 {
     int i, ft;
 
@@ -326,14 +326,14 @@ static fer_real_t fitness(fer_gpc_t *gpc, int *class, void *_)
         ft += (class[i] == train_y[i]);
     }
 
-    return ((fer_real_t)ft) / train_rows;
+    return ((bor_real_t)ft) / train_rows;
 }
 
-static void callback(fer_gpc_t *gpc, void *_)
+static void callback(svo_gpc_t *gpc, void *_)
 {
-    fer_gpc_stats_t stats;
+    svo_gpc_stats_t stats;
 
-    ferGPCStats(gpc, &stats);
+    svoGPCStats(gpc, &stats);
     fprintf(stderr, "[%06ld] min: %f, max: %f, avg: %f, med: %f "
                     "| depth: %.2f (%3d) "
                     "| nodes: %.2f (%4d) "
@@ -343,32 +343,32 @@ static void callback(fer_gpc_t *gpc, void *_)
             stats.avg_fitness, stats.med_fitness,
             stats.avg_depth, stats.max_depth,
             stats.avg_nodes, stats.max_nodes,
-            ferGPCMaxDepth(gpc));
+            svoGPCMaxDepth(gpc));
     fflush(stderr);
 
     if (log_fout){
         fprintf(log_fout, "%f %f %f %f %f %f\n",
                 stats.avg_fitness, stats.med_fitness,
                 stats.max_fitness,
-                stats.avg_depth, (float)ferGPCMaxDepth(gpc),
+                stats.avg_depth, (float)svoGPCMaxDepth(gpc),
                 stats.avg_nodes);
         fflush(log_fout);
     }
 }
 
 
-static void cmpInit(fer_gpc_t *gpc, void *mem, void *ud)
+static void cmpInit(svo_gpc_t *gpc, void *mem, void *ud)
 {
     struct cmp_t *m = (struct cmp_t *)mem;
-    m->idx = ferGPCRandInt(gpc, 0, cols);
-    m->val = ferGPCRand(gpc, -1., 1.);
-    m->op  = ferGPCRandInt(gpc, 0, 2);
+    m->idx = svoGPCRandInt(gpc, 0, cols);
+    m->val = svoGPCRand(gpc, -1., 1.);
+    m->op  = svoGPCRandInt(gpc, 0, 2);
 }
 
-static int cmpPred(fer_gpc_t *gpc, void *mem, void *data, void *ud)
+static int cmpPred(svo_gpc_t *gpc, void *mem, void *data, void *ud)
 {
     struct cmp_t *m = (struct cmp_t *)mem;
-    fer_real_t *d = (fer_real_t *)data;
+    bor_real_t *d = (bor_real_t *)data;
     if (m->op == 0){
         return (d[m->idx] < m->val ? 0 : 1);
     }else{
@@ -376,7 +376,7 @@ static int cmpPred(fer_gpc_t *gpc, void *mem, void *data, void *ud)
     }
 }
 
-static void cmpFormat(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max)
+static void cmpFormat(svo_gpc_t *gpc, void *mem, void *ud, char *str, size_t max)
 {
     struct cmp_t *m = (struct cmp_t *)mem;
     if (m->op == 0){
@@ -386,20 +386,20 @@ static void cmpFormat(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max
     }
 }
 
-static void cmp2Init(fer_gpc_t *gpc, void *mem, void *ud)
+static void cmp2Init(svo_gpc_t *gpc, void *mem, void *ud)
 {
     struct cmp2_t *m = (struct cmp2_t *)mem;
-    m->idx1 = ferGPCRandInt(gpc, 0, cols);
+    m->idx1 = svoGPCRandInt(gpc, 0, cols);
     do {
-        m->idx2 = ferGPCRandInt(gpc, 0, cols);
+        m->idx2 = svoGPCRandInt(gpc, 0, cols);
     } while (m->idx2 == m->idx1);
-    m->op  = ferGPCRandInt(gpc, 0, 2);
+    m->op  = svoGPCRandInt(gpc, 0, 2);
 }
 
-static int cmp2Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud)
+static int cmp2Pred(svo_gpc_t *gpc, void *mem, void *data, void *ud)
 {
     struct cmp2_t *m = (struct cmp2_t *)mem;
-    fer_real_t *d = (fer_real_t *)data;
+    bor_real_t *d = (bor_real_t *)data;
     if (m->op == 0){
         return (d[m->idx1] < d[m->idx2] ? 0 : 1);
     }else{
@@ -407,7 +407,7 @@ static int cmp2Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud)
     }
 }
 
-static void cmp2Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max)
+static void cmp2Format(svo_gpc_t *gpc, void *mem, void *ud, char *str, size_t max)
 {
     struct cmp2_t *m = (struct cmp2_t *)mem;
     if (m->op == 0){
@@ -418,26 +418,26 @@ static void cmp2Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t ma
 }
 
 
-static void cmp3Init(fer_gpc_t *gpc, void *mem, void *ud)
+static void cmp3Init(svo_gpc_t *gpc, void *mem, void *ud)
 {
     struct cmp3_t *m = (struct cmp3_t *)mem;
     int op2;
-    m->idx1 = ferGPCRandInt(gpc, 0, cols);
+    m->idx1 = svoGPCRandInt(gpc, 0, cols);
     do {
-        m->idx2 = ferGPCRandInt(gpc, 0, cols);
+        m->idx2 = svoGPCRandInt(gpc, 0, cols);
     } while (m->idx2 == m->idx1);
-    m->val = ferGPCRand(gpc, -1., 1.);
+    m->val = svoGPCRand(gpc, -1., 1.);
 
-    m->op  = ferGPCRandInt(gpc, 0, 2);
-    op2    = ferGPCRandInt(gpc, 0, 4);
+    m->op  = svoGPCRandInt(gpc, 0, 2);
+    op2    = svoGPCRandInt(gpc, 0, 4);
     m->op |= (op2 << 1);
 }
 
-static int cmp3Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud)
+static int cmp3Pred(svo_gpc_t *gpc, void *mem, void *data, void *ud)
 {
     struct cmp3_t *m = (struct cmp3_t *)mem;
-    fer_real_t *d = (fer_real_t *)data;
-    fer_real_t v1;
+    bor_real_t *d = (bor_real_t *)data;
+    bor_real_t v1;
     int op2;
 
     op2 = (m->op >> 1);
@@ -457,7 +457,7 @@ static int cmp3Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud)
         return (v1 > m->val ? 0 : 1);
     }
 }
-static void cmp3Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max)
+static void cmp3Format(svo_gpc_t *gpc, void *mem, void *ud, char *str, size_t max)
 {
     struct cmp3_t *m = (struct cmp3_t *)mem;
     char cop, cop2;
@@ -483,28 +483,28 @@ static void cmp3Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t ma
     snprintf(str, max, "data[%d] %c data[%d] %c %f", m->idx1, cop2, m->idx2, cop, m->val);
 }
 
-static void cmp4Init(fer_gpc_t *gpc, void *mem, void *ud)
+static void cmp4Init(svo_gpc_t *gpc, void *mem, void *ud)
 {
     struct cmp4_t *m = (struct cmp4_t *)mem;
     int op2;
-    m->idx1 = ferGPCRandInt(gpc, 0, cols);
+    m->idx1 = svoGPCRandInt(gpc, 0, cols);
     do {
-        m->idx2 = ferGPCRandInt(gpc, 0, cols);
+        m->idx2 = svoGPCRandInt(gpc, 0, cols);
     } while (m->idx2 == m->idx1);
     do {
-        m->idx3 = ferGPCRandInt(gpc, 0, cols);
+        m->idx3 = svoGPCRandInt(gpc, 0, cols);
     } while (m->idx3 == m->idx1 || m->idx3 == m->idx2);
 
-    m->op  = ferGPCRandInt(gpc, 0, 2);
-    op2    = ferGPCRandInt(gpc, 0, 4);
+    m->op  = svoGPCRandInt(gpc, 0, 2);
+    op2    = svoGPCRandInt(gpc, 0, 4);
     m->op |= (op2 << 1);
 }
 
-static int cmp4Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud)
+static int cmp4Pred(svo_gpc_t *gpc, void *mem, void *data, void *ud)
 {
     struct cmp4_t *m = (struct cmp4_t *)mem;
-    fer_real_t *d = (fer_real_t *)data;
-    fer_real_t v1;
+    bor_real_t *d = (bor_real_t *)data;
+    bor_real_t v1;
     int op2;
 
     op2 = (m->op >> 1);
@@ -524,7 +524,7 @@ static int cmp4Pred(fer_gpc_t *gpc, void *mem, void *data, void *ud)
         return (v1 > d[m->idx3] ? 0 : 1);
     }
 }
-static void cmp4Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t max)
+static void cmp4Format(svo_gpc_t *gpc, void *mem, void *ud, char *str, size_t max)
 {
     struct cmp4_t *m = (struct cmp4_t *)mem;
     char cop, cop2;
@@ -551,19 +551,19 @@ static void cmp4Format(fer_gpc_t *gpc, void *mem, void *ud, char *str, size_t ma
 }
 
 
-static float correct(fer_gpc_t *gpc, int id,
-                     const fer_real_t *x, const int *y, int len)
+static float correct(svo_gpc_t *gpc, int id,
+                     const bor_real_t *x, const int *y, int len)
 {
     int i, class;
     void *tree, *data;
     int correct;
 
-    tree = ferGPCTree(gpc, id);
+    tree = svoGPCTree(gpc, id);
 
     correct = 0;
     for (i = 0; i < len; i++){
         data = (void *)(x + (i * cols));
-        class = ferGPCTreeEval(gpc, tree, data);
+        class = svoGPCTreeEval(gpc, tree, data);
         if (class == y[i])
             correct++;
     }
@@ -571,7 +571,7 @@ static float correct(fer_gpc_t *gpc, int id,
     return (float)correct / (float)len;
 }
 
-static void outputResults(fer_gpc_t *gpc)
+static void outputResults(svo_gpc_t *gpc)
 {
     int i;
     void *tree;
@@ -579,7 +579,7 @@ static void outputResults(fer_gpc_t *gpc)
     FILE *fout;
 
     for (i = 0; i < output_results; i++){
-        tree = ferGPCTree(gpc, i);
+        tree = svoGPCTree(gpc, i);
         if (!tree)
             break;
 
@@ -592,8 +592,8 @@ static void outputResults(fer_gpc_t *gpc)
 
         fprintf(fout, "// Train accuracy: %f\n", correct(gpc, i, train_x, train_y, train_rows));
         fprintf(fout, "// Test accuracy: %f\n", correct(gpc, i, test_x, test_y, test_rows));
-        fprintf(fout, "// Depth: %d\n", ferGPCTreeDepth(gpc, tree));
-        ferGPCTreePrintC(gpc, tree, "predict", fout);
+        fprintf(fout, "// Depth: %d\n", svoGPCTreeDepth(gpc, tree));
+        svoGPCTreePrintC(gpc, tree, "predict", fout);
         fclose(fout);
     }
     //evalTestData(gpc);

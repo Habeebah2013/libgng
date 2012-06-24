@@ -14,25 +14,25 @@
  *  See the License for more information.
  */
 
-#ifndef __FER_RRT_H__
-#define __FER_RRT_H__
+#ifndef __SVO_RRT_H__
+#define __SVO_RRT_H__
 
-#include <fermat/vec.h>
-#include <fermat/net.h>
-#include <fermat/nn.h>
-#include <fermat/dij.h>
+#include <boruvka/vec.h>
+#include <boruvka/net.h>
+#include <boruvka/nn.h>
+#include <boruvka/dij.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-#define FER_RRT_FREE 1
-#define FER_RRT_OBST 2
+#define SVO_RRT_FREE 1
+#define SVO_RRT_OBST 2
 
-struct _fer_rrt_ops_t;
-struct _fer_rrt_params_t;
-struct _fer_rrt_node_t;
-struct _fer_rrt_t;
+struct _svo_rrt_ops_t;
+struct _svo_rrt_params_t;
+struct _svo_rrt_node_t;
+struct _svo_rrt_t;
 
 /**
  * RRT - Rapidly-Exploring Random Trees
@@ -43,7 +43,7 @@ struct _fer_rrt_t;
  * RRT Operations
  * ---------------
  *
- * See fer_rrt_ops_t.
+ * See svo_rrt_ops_t.
  */
 
 /** vvvv */
@@ -51,40 +51,40 @@ struct _fer_rrt_t;
 /**
  * Returns random configuration.
  */
-typedef const fer_vec_t *(*fer_rrt_random)(const struct _fer_rrt_t *rrt, void *);
+typedef const bor_vec_t *(*svo_rrt_random)(const struct _svo_rrt_t *rrt, void *);
 
 /**
  * Returns nearest node to given configuration.
  * Note that returned node must be somehow obtained from {rrt}.
  */
-typedef const struct _fer_rrt_node_t *(*fer_rrt_nearest)(const struct _fer_rrt_t *rrt,
-                                                         const fer_vec_t *conf,
+typedef const struct _svo_rrt_node_t *(*svo_rrt_nearest)(const struct _svo_rrt_t *rrt,
+                                                         const bor_vec_t *conf,
                                                          void *);
 
 /**
  * Expands node {n} towards configuration {conf}.
  */
-typedef const fer_vec_t *(*fer_rrt_expand)(const struct _fer_rrt_t *rrt,
-                                           const struct _fer_rrt_node_t *n,
-                                           const fer_vec_t *conf,
+typedef const bor_vec_t *(*svo_rrt_expand)(const struct _svo_rrt_t *rrt,
+                                           const struct _svo_rrt_node_t *n,
+                                           const bor_vec_t *conf,
                                            void *);
 
 /**
  * Expands node {n} towards configuration {conf} - fills list {list_out}
  * with all possible configurations.
- * Use ferRRTExpandAdd() function for adding configurations into
+ * Use svoRRTExpandAdd() function for adding configurations into
  * {list_out}.
  */
-typedef void (*fer_rrt_expand_all)(const struct _fer_rrt_t *rrt,
-                                   const struct _fer_rrt_node_t *n,
-                                   const fer_vec_t *conf,
+typedef void (*svo_rrt_expand_all)(const struct _svo_rrt_t *rrt,
+                                   const struct _svo_rrt_node_t *n,
+                                   const bor_vec_t *conf,
                                    void * data,
-                                   fer_list_t *list_out);
+                                   bor_list_t *list_out);
 
 /**
  * Returns true if algorithm should terminate.
  */
-typedef int (*fer_rrt_terminate)(const struct _fer_rrt_t *rrt, void *);
+typedef int (*svo_rrt_terminate)(const struct _svo_rrt_t *rrt, void *);
 
 /**
  * Return true if expansion chain should be terminated. Start node (where
@@ -92,10 +92,10 @@ typedef int (*fer_rrt_terminate)(const struct _fer_rrt_t *rrt, void *);
  * provided.
  * See *RunConnect() for more info.
  */
-typedef int (*fer_rrt_terminate_expand)(const struct _fer_rrt_t *rrt,
-                                        const struct _fer_rrt_node_t *start,
-                                        const struct _fer_rrt_node_t *last,
-                                        const fer_vec_t *rand_conf,
+typedef int (*svo_rrt_terminate_expand)(const struct _svo_rrt_t *rrt,
+                                        const struct _svo_rrt_node_t *start,
+                                        const struct _svo_rrt_node_t *last,
+                                        const bor_vec_t *rand_conf,
                                         void *);
 
 /**
@@ -103,30 +103,30 @@ typedef int (*fer_rrt_terminate_expand)(const struct _fer_rrt_t *rrt,
  * {src} is node frome which were expansion performed, {nearest} is node
  * nearest to {candidate}.
  */
-typedef int (*fer_rrt_filter_blossom)(const struct _fer_rrt_t *rrt,
-                                      const fer_vec_t *candidate,
-                                      const struct _fer_rrt_node_t *src,
-                                      const struct _fer_rrt_node_t *nearest,
+typedef int (*svo_rrt_filter_blossom)(const struct _svo_rrt_t *rrt,
+                                      const bor_vec_t *candidate,
+                                      const struct _svo_rrt_node_t *src,
+                                      const struct _svo_rrt_node_t *nearest,
                                       void *);
 /**
  * Callback that is periodically called from RRT.
  *
  * It is called every .callback_period'th added node.
  */
-typedef void (*fer_rrt_callback)(const struct _fer_rrt_t *rrt, void *);
+typedef void (*svo_rrt_callback)(const struct _svo_rrt_t *rrt, void *);
 
 /** ^^^^ */
 
-struct _fer_rrt_ops_t {
-    fer_rrt_random random;
-    fer_rrt_nearest nearest;
-    fer_rrt_expand expand;
-    fer_rrt_expand_all expand_all;
-    fer_rrt_terminate terminate;
-    fer_rrt_terminate_expand terminate_expand;
-    fer_rrt_filter_blossom filter_blossom;
+struct _svo_rrt_ops_t {
+    svo_rrt_random random;
+    svo_rrt_nearest nearest;
+    svo_rrt_expand expand;
+    svo_rrt_expand_all expand_all;
+    svo_rrt_terminate terminate;
+    svo_rrt_terminate_expand terminate_expand;
+    svo_rrt_filter_blossom filter_blossom;
 
-    fer_rrt_callback callback;
+    svo_rrt_callback callback;
     unsigned long callback_period;
 
     void *data; /*!< Data pointer that will be provided to all callbacks if
@@ -141,76 +141,76 @@ struct _fer_rrt_ops_t {
     void *filter_blossom_data;
     void *callback_data;
 };
-typedef struct _fer_rrt_ops_t fer_rrt_ops_t;
+typedef struct _svo_rrt_ops_t svo_rrt_ops_t;
 
 /**
  * Initializes ops struct to NULL values.
  */
-void ferRRTOpsInit(fer_rrt_ops_t *ops);
+void svoRRTOpsInit(svo_rrt_ops_t *ops);
 
 /**
  * Adds given configuration into list
  */
-void ferRRTExpandAdd(int dim, const fer_vec_t *conf, fer_list_t *list);
+void svoRRTExpandAdd(int dim, const bor_vec_t *conf, bor_list_t *list);
 
 /**
  * RRT Parameters
  * ---------------
  */
-struct _fer_rrt_params_t {
+struct _svo_rrt_params_t {
     int dim; /*!< Dimension of problem */
 
-    fer_nn_params_t nn;
+    bor_nn_params_t nn;
 };
-typedef struct _fer_rrt_params_t fer_rrt_params_t;
+typedef struct _svo_rrt_params_t svo_rrt_params_t;
 
 /**
  * Initializes params struct to default values.
  */
-void ferRRTParamsInit(fer_rrt_params_t *params);
+void svoRRTParamsInit(svo_rrt_params_t *params);
 
 
 /**
  * RRT Algorithm
  * --------------
  *
- * See fer_rrt_t.
+ * See svo_rrt_t.
  */
 
-struct _fer_rrt_node_t {
-    fer_vec_t *conf;
-    fer_net_node_t node;
-    fer_nn_el_t nn;
+struct _svo_rrt_node_t {
+    bor_vec_t *conf;
+    bor_net_node_t node;
+    bor_nn_el_t nn;
 
-    fer_dij_node_t dij;
-    fer_list_t path;
+    bor_dij_node_t dij;
+    bor_list_t path;
 
     int _id;
 };
-typedef struct _fer_rrt_node_t fer_rrt_node_t;
+typedef struct _svo_rrt_node_t svo_rrt_node_t;
 
-struct _fer_rrt_t {
-    fer_rrt_ops_t ops;
-    fer_rrt_params_t params;
+struct _svo_rrt_t {
+    svo_rrt_ops_t ops;
+    svo_rrt_params_t params;
 
-    fer_net_t *net;
-    fer_nn_t *nn;
+    bor_net_t *net;
+    bor_nn_t *nn;
 
-    fer_rrt_node_t *node_init; /*!< Initial node */
-    fer_rrt_node_t *node_last; /*!< Last generated node */
+    svo_rrt_node_t *node_init; /*!< Initial node */
+    svo_rrt_node_t *node_last; /*!< Last generated node */
 };
-typedef struct _fer_rrt_t fer_rrt_t;
+typedef struct _svo_rrt_t svo_rrt_t;
 
 /**
  * Creates new instance of algorithm
  */
-fer_rrt_t *ferRRTNew(const fer_rrt_ops_t *ops,
-                     const fer_rrt_params_t *params);
+svo_rrt_t *svoRRTNew(const svo_rrt_ops_t *ops,
+                     const svo_rrt_params_t *params);
 
 /**
  * Deletes RRT instance.
  */
-void ferRRTDel(fer_rrt_t *rrt);
+void svoRRTDel(svo_rrt_t *rrt);
 
 /**
  * Runs basic algorithm:
@@ -222,7 +222,7 @@ void ferRRTDel(fer_rrt_t *rrt);
  *     if e != NULL:
  *         create edge between n and e
  */
-void ferRRTRunBasic(fer_rrt_t *rrt, const fer_vec_t *init);
+void svoRRTRunBasic(svo_rrt_t *rrt, const bor_vec_t *init);
 
 /**
  * Runs RRT-Connect:
@@ -237,7 +237,7 @@ void ferRRTRunBasic(fer_rrt_t *rrt, const fer_vec_t *init);
  *         n = e
  *     until n != NULL && !ops.terminate_expand(n, r)
  */
-void ferRRTRunConnect(fer_rrt_t *rrt, const fer_vec_t *init);
+void svoRRTRunConnect(svo_rrt_t *rrt, const bor_vec_t *init);
 
 /**
  * Runs RRT-Blossom:
@@ -251,38 +251,38 @@ void ferRRTRunConnect(fer_rrt_t *rrt, const fer_vec_t *init);
  *         if ops.filter_blossom(e, n, m):
  *             create edge between n and e
  */
-void ferRRTRunBlossom(fer_rrt_t *rrt, const fer_vec_t *init);
+void svoRRTRunBlossom(svo_rrt_t *rrt, const bor_vec_t *init);
 
 /**
  * Returns number of nodes in roadmap.
  */
-_fer_inline size_t ferRRTNodesLen(const fer_rrt_t *rrt);
+_bor_inline size_t svoRRTNodesLen(const svo_rrt_t *rrt);
 
 /**
  * Returns initial node.
  *
  * The one with configuration passed to *Run*() function.
  */
-_fer_inline const fer_rrt_node_t *ferRRTNodeInitial(const fer_rrt_t *rrt);
+_bor_inline const svo_rrt_node_t *svoRRTNodeInitial(const svo_rrt_t *rrt);
 
 /**
  * Returns last newly created node.
  */
-_fer_inline const fer_rrt_node_t *ferRRTNodeLast(const fer_rrt_t *rrt);
+_bor_inline const svo_rrt_node_t *svoRRTNodeLast(const svo_rrt_t *rrt);
 
 /**
  * Creates new node in tree with configuration {conf} and this node will be
  * connected with node {n}. Node {n} must be already in RRT's net.
  */
-const fer_rrt_node_t *ferRRTNodeNew(fer_rrt_t *rrt, const fer_vec_t *conf,
-                                    const fer_rrt_node_t *n);
+const svo_rrt_node_t *svoRRTNodeNew(svo_rrt_t *rrt, const bor_vec_t *conf,
+                                    const svo_rrt_node_t *n);
 
 /**
  * Returns nearest node to given configuration {c}. Nearest node is
  * meassured in euclidean distance metric.
  * This function is used if ops.nearest is set to NULL.
  */
-const fer_rrt_node_t *ferRRTNearest(const fer_rrt_t *rrt, const fer_vec_t *c);
+const svo_rrt_node_t *svoRRTNearest(const svo_rrt_t *rrt, const bor_vec_t *c);
 
 /**
  * Tries to find path in net from init to goal.
@@ -290,46 +290,46 @@ const fer_rrt_node_t *ferRRTNearest(const fer_rrt_t *rrt, const fer_vec_t *c);
  * representing path. Nodes are connected into this list by member .path.
  * If path wasn't found -1 is returned.
  */
-int ferRRTFindPath(fer_rrt_t *rrt,
-                   const fer_rrt_node_t *init, const fer_rrt_node_t *goal,
-                   fer_list_t *list);
+int svoRRTFindPath(svo_rrt_t *rrt,
+                   const svo_rrt_node_t *init, const svo_rrt_node_t *goal,
+                   bor_list_t *list);
 
 /**
  * Dumps net in SVT format.
  */
-void ferRRTDumpSVT(fer_rrt_t *rrt, FILE *out, const char *name);
+void svoRRTDumpSVT(svo_rrt_t *rrt, FILE *out, const char *name);
 
 /**
  * Node Functions
  * ---------------
  *
- * See fer_rrt_node_t.
+ * See svo_rrt_node_t.
  */
 
 /**
  * Returns configuration (state) of node.
  */
-_fer_inline const fer_vec_t *ferRRTNodeConf(const fer_rrt_node_t *n);
+_bor_inline const bor_vec_t *svoRRTNodeConf(const svo_rrt_node_t *n);
 
 
 /**** INLINES ****/
-_fer_inline size_t ferRRTNodesLen(const fer_rrt_t *rrt)
+_bor_inline size_t svoRRTNodesLen(const svo_rrt_t *rrt)
 {
-    return ferNetNodesLen(rrt->net);
+    return borNetNodesLen(rrt->net);
 }
 
-_fer_inline const fer_rrt_node_t *ferRRTNodeInitial(const fer_rrt_t *rrt)
+_bor_inline const svo_rrt_node_t *svoRRTNodeInitial(const svo_rrt_t *rrt)
 {
     return rrt->node_init;
 }
 
-_fer_inline const fer_rrt_node_t *ferRRTNodeLast(const fer_rrt_t *rrt)
+_bor_inline const svo_rrt_node_t *svoRRTNodeLast(const svo_rrt_t *rrt)
 {
     return rrt->node_last;
 }
 
 
-_fer_inline const fer_vec_t *ferRRTNodeConf(const fer_rrt_node_t *n)
+_bor_inline const bor_vec_t *svoRRTNodeConf(const svo_rrt_node_t *n)
 {
     return n->conf;
 }
@@ -338,4 +338,4 @@ _fer_inline const fer_vec_t *ferRRTNodeConf(const fer_rrt_node_t *n)
 } /* extern "C" */
 #endif /* __cplusplus */
 
-#endif /* __FER_RRT_H__ */
+#endif /* __SVO_RRT_H__ */

@@ -14,79 +14,79 @@
  *  See the License for more information.
  */
 
-#ifndef __FER_KOHONEN_H__
-#define __FER_KOHONEN_H__
+#ifndef __SVO_KOHONEN_H__
+#define __SVO_KOHONEN_H__
 
-#include <fermat/core.h>
-#include <fermat/net.h>
-#include <fermat/nn.h>
+#include <boruvka/core.h>
+#include <boruvka/net.h>
+#include <boruvka/nn.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-struct _fer_kohonen_t;
+struct _svo_kohonen_t;
 
 /**
  * Kohonen Map
  * ============
  *
- * See fer_kohonen_t.
+ * See svo_kohonen_t.
  */
 
-struct _fer_kohonen_node_t {
-    fer_vec_t *w;
+struct _svo_kohonen_node_t {
+    bor_vec_t *w;
 
-    fer_net_node_t net;
-    fer_nn_el_t nn;
+    bor_net_node_t net;
+    bor_nn_el_t nn;
 
-    fer_list_t fifo;
+    bor_list_t fifo;
     unsigned int update;
     unsigned int depth;
     int8_t fixed;
 
     int _id;
 };
-typedef struct _fer_kohonen_node_t fer_kohonen_node_t;
+typedef struct _svo_kohonen_node_t svo_kohonen_node_t;
 
 /**
  * Operators
  * ----------
  *
- * See fer_kohonen_ops_t.
+ * See svo_kohonen_ops_t.
  */
 
 /**
  * Returns input signal
  */
-typedef const fer_vec_t *(*fer_kohonen_input_signal)(struct _fer_kohonen_t *k, void *);
+typedef const bor_vec_t *(*svo_kohonen_input_signal)(struct _svo_kohonen_t *k, void *);
 
 /**
  * Returns 0 if {cur} (which is in {depth} in BFS manner) is still part of
  * {center}'s neighborhood and fills with the value of strength.
  */
-typedef int (*fer_kohonen_neighborhood)(struct _fer_kohonen_t *k,
-                                        const fer_kohonen_node_t *center,
-                                        const fer_kohonen_node_t *cur,
+typedef int (*svo_kohonen_neighborhood)(struct _svo_kohonen_t *k,
+                                        const svo_kohonen_node_t *center,
+                                        const svo_kohonen_node_t *cur,
                                         int depth,
-                                        fer_real_t *val, void *);
+                                        bor_real_t *val, void *);
 
 /**
  * Returns true if algorithm should terminate.
  */
-typedef int (*fer_kohonen_terminate)(struct _fer_kohonen_t *k, void *);
+typedef int (*svo_kohonen_terminate)(struct _svo_kohonen_t *k, void *);
 
 /**
  * Callback that is called peridically every .callback_period'th cycle.
  */
-typedef void (*fer_kohonen_callback)(struct _fer_kohonen_t *k, void *);
+typedef void (*svo_kohonen_callback)(struct _svo_kohonen_t *k, void *);
 
 
-struct _fer_kohonen_ops_t {
-    fer_kohonen_input_signal input_signal;
-    fer_kohonen_neighborhood neighborhood;
-    fer_kohonen_terminate    terminate;
-    fer_kohonen_callback     callback;
+struct _svo_kohonen_ops_t {
+    svo_kohonen_input_signal input_signal;
+    svo_kohonen_neighborhood neighborhood;
+    svo_kohonen_terminate    terminate;
+    svo_kohonen_callback     callback;
 
     void *data;
     void *input_signal_data;
@@ -96,42 +96,42 @@ struct _fer_kohonen_ops_t {
 
     unsigned long callback_period; /*!< Default: 100 */
 };
-typedef struct _fer_kohonen_ops_t fer_kohonen_ops_t;
+typedef struct _svo_kohonen_ops_t svo_kohonen_ops_t;
 
 /**
  * Initializes operators struct
  */
-void ferKohonenOpsInit(fer_kohonen_ops_t *ops);
+void svoKohonenOpsInit(svo_kohonen_ops_t *ops);
 
 
 /**
  * Parameters
  * -----------
  */
-struct _fer_kohonen_params_t {
+struct _svo_kohonen_params_t {
     int dim;               /*!< Dimensionality. Default: 2 */
-    fer_real_t learn_rate; /*!< Learning rate */
-    fer_nn_params_t nn;    /*!< Nearest neighbor search params */
+    bor_real_t learn_rate; /*!< Learning rate */
+    bor_nn_params_t nn;    /*!< Nearest neighbor search params */
 };
-typedef struct _fer_kohonen_params_t fer_kohonen_params_t;
+typedef struct _svo_kohonen_params_t svo_kohonen_params_t;
 
 /**
  * Initializes parameters
  */
-void ferKohonenParamsInit(fer_kohonen_params_t *p);
+void svoKohonenParamsInit(svo_kohonen_params_t *p);
 
-struct _fer_kohonen_t {
-    fer_kohonen_ops_t ops;
-    fer_kohonen_params_t params;
+struct _svo_kohonen_t {
+    svo_kohonen_ops_t ops;
+    svo_kohonen_params_t params;
 
-    fer_net_t *net;
-    fer_nn_t *nn;
+    bor_net_t *net;
+    bor_nn_t *nn;
 
     unsigned int update;
 
-    fer_vec_t *tmpv;
+    bor_vec_t *tmpv;
 };
-typedef struct _fer_kohonen_t fer_kohonen_t;
+typedef struct _svo_kohonen_t svo_kohonen_t;
 
 
 /**
@@ -142,24 +142,24 @@ typedef struct _fer_kohonen_t fer_kohonen_t;
 /**
  * Creates Kohonen Map
  */
-fer_kohonen_t *ferKohonenNew(const fer_kohonen_ops_t *ops,
-                             const fer_kohonen_params_t *params);
+svo_kohonen_t *svoKohonenNew(const svo_kohonen_ops_t *ops,
+                             const svo_kohonen_params_t *params);
 
 /**
  * Deletes kohonen map
  */
-void ferKohonenDel(fer_kohonen_t *k);
+void svoKohonenDel(svo_kohonen_t *k);
 
 
 /**
  * Runs Kohonen Map algorithm
  */
-void ferKohonenRun(fer_kohonen_t *k);
+void svoKohonenRun(svo_kohonen_t *k);
 
 /**
  * Dumps 2D and 3D kohonen map in SVT format
  */
-void ferKohonenDumpSVT(const fer_kohonen_t *k, FILE *out, const char *name);
+void svoKohonenDumpSVT(const svo_kohonen_t *k, FILE *out, const char *name);
 
 /**
  * Node functions
@@ -169,37 +169,37 @@ void ferKohonenDumpSVT(const fer_kohonen_t *k, FILE *out, const char *name);
 /**
  * Creates new node
  */
-fer_kohonen_node_t *ferKohonenNodeNew(fer_kohonen_t *k, const fer_vec_t *init);
+svo_kohonen_node_t *svoKohonenNodeNew(svo_kohonen_t *k, const bor_vec_t *init);
 
 /**
  * Deletes node
  */
-void ferKohonenNodeDel(fer_kohonen_t *k, fer_kohonen_node_t *n);
+void svoKohonenNodeDel(svo_kohonen_t *k, svo_kohonen_node_t *n);
 
 /**
  * Connects {n1} and {n2} nodes
  */
-void ferKohonenNodeConnect(fer_kohonen_t *k,
-                           fer_kohonen_node_t *n1,
-                           fer_kohonen_node_t *n2);
+void svoKohonenNodeConnect(svo_kohonen_t *k,
+                           svo_kohonen_node_t *n1,
+                           svo_kohonen_node_t *n2);
 
 /**
  * Returns true if node is fixed.
  */
-_fer_inline int8_t ferKohonenNodeFixed(const fer_kohonen_node_t *n);
+_bor_inline int8_t svoKohonenNodeFixed(const svo_kohonen_node_t *n);
 
 /**
  * Set a node as fixed
  */
-_fer_inline void ferKohonenNodeSetFixed(fer_kohonen_node_t *n, int8_t fixed);
+_bor_inline void svoKohonenNodeSetFixed(svo_kohonen_node_t *n, int8_t fixed);
 
 /**** INLINES ****/
-_fer_inline int8_t ferKohonenNodeFixed(const fer_kohonen_node_t *n)
+_bor_inline int8_t svoKohonenNodeFixed(const svo_kohonen_node_t *n)
 {
     return n->fixed;
 }
 
-_fer_inline void ferKohonenNodeSetFixed(fer_kohonen_node_t *n, int8_t fixed)
+_bor_inline void svoKohonenNodeSetFixed(svo_kohonen_node_t *n, int8_t fixed)
 {
     n->fixed = fixed;
 }
@@ -208,4 +208,4 @@ _fer_inline void ferKohonenNodeSetFixed(fer_kohonen_node_t *n, int8_t fixed)
 }
 #endif /* __cplusplus */
 
-#endif /* __FER_KOHONEN_H__ */
+#endif /* __SVO_KOHONEN_H__ */

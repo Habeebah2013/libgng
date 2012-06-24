@@ -18,8 +18,10 @@
 -include Makefile.include
 
 CFLAGS += -I.
+CFLAGS += $(BORUVKA_CFLAGS)
 CXXFLAGS += -I.
 LDFLAGS += -L. -lsvoboda -lm -lrt
+LDFLAGS += $(BORUVKA_LDFLAGS)
 
 TARGETS = libsvoboda.a
 OBJS  = gng.o gng-eu.o gsrm.o
@@ -32,8 +34,8 @@ OBJS += gpc.o gpc-tree.o
 OBJS += ga.o
 
 
-BIN_TARGETS  = fer-gsrm
-BIN_TARGETS += fer-plan
+BIN_TARGETS  = svo-gsrm
+BIN_TARGETS += svo-plan
 
 EXAMPLE_TARGETS += nnbp-simple
 ifeq '$(USE_SDL)' 'yes'
@@ -69,12 +71,12 @@ libsvoboda.a: $(OBJS)
 	ar cr $@ $(OBJS)
 	ranlib $@
 
-bin/fer-%: bin/%-main.c libsvoboda.a
+bin/svo-%: bin/%-main.c libsvoboda.a
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-bin/fer-plan: bin/plan-main.o bin/cfg-map.o libsvoboda.a
-	$(CC) $(CFLAGS) $(OPENCL_CFLAGS) -o $@ $< bin/cfg-map.o $(LDFLAGS) $(OPENCL_LDFLAGS)
+bin/svo-plan: bin/plan-main.o bin/cfg-map.o libsvoboda.a
+	$(CC) $(CFLAGS) $(HOOKE_CFLAGS) -o $@ $< bin/cfg-map.o $(HOOKE_LDFLAGS) $(LDFLAGS)
 bin/%.o: bin/%.c bin/%.h
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CFLAGS) $(HOOKE_CFLAGS) -c -o $@ $<
 
 examples/%: examples/%.c libsvoboda.a
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
@@ -162,6 +164,10 @@ help:
 	@echo "    CXXFLAGS          = $(CXXFLAGS)"
 	@echo "    LDFLAGS           = $(LDFLAGS)"
 	@echo "    CONFIG_FLAGS      = $(CONFIG_FLAGS)"
+	@echo "    BORUVKA_CFLAGS    = $(BORUVKA_CFLAGS)"
+	@echo "    BORUVKA_LDFLAGS   = $(BORUVKA_LDFLAGS)"
+	@echo "    HOOKE_CFLAGS      = $(HOOKE_CFLAGS)"
+	@echo "    HOOKE_LDFLAGS     = $(HOOKE_LDFLAGS)"
 	@echo "    SDL_CFLAGS        = $(SDL_CFLAGS)"
 	@echo "    SDL_LDFLAGS       = $(SDL_LDFLAGS)"
 	@echo "    SDL_IMAGE_CFLAGS  = $(SDL_IMAGE_CFLAGS)"

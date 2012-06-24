@@ -15,31 +15,31 @@
  *  See the License for more information.
  */
 
-#ifndef FER_CFG_MAP_H_
-#define FER_CFG_MAP_H_
+#ifndef BOR_CFG_MAP_H_
+#define BOR_CFG_MAP_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-int ferCfgMapInit(const char *fn);
-void ferCfgMapDestroy(void);
-int ferCfgMapRobot(const char *name, fer_real_t *h,
-                   fer_vec_t *init, fer_vec_t *goal);
-void ferCfgMapListRobots(FILE *out);
-int ferCfgMapCollide(const fer_vec_t *conf);
-const fer_vec_t *ferCfgMapConf(void);
+int borCfgMapInit(const char *fn);
+void borCfgMapDestroy(void);
+int borCfgMapRobot(const char *name, bor_real_t *h,
+                   bor_vec_t *init, bor_vec_t *goal);
+void borCfgMapListRobots(FILE *out);
+int borCfgMapCollide(const bor_vec_t *conf);
+const bor_vec_t *borCfgMapConf(void);
 
-const fer_real_t *ferCfgMapAABB(void);
-int ferCfgMapDim(void);
-int ferCfgMapConfDim(void);
-void ferCfgMapUseRot(void);
+const bor_real_t *borCfgMapAABB(void);
+int borCfgMapDim(void);
+int borCfgMapConfDim(void);
+void borCfgMapUseRot(void);
 
-void ferCfgMapDumpSVT(FILE *out, const char *name);
-void ferCfgMapRobotDumpSVT(const fer_vec_t *conf, FILE *out, const char *name);
+void borCfgMapDumpSVT(FILE *out, const char *name);
+void borCfgMapRobotDumpSVT(const bor_vec_t *conf, FILE *out, const char *name);
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* FER_CFG_MAP_H_ */
+#endif /* BOR_CFG_MAP_H_ */

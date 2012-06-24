@@ -128,6 +128,11 @@ endif
 LDFLAGS += -pthread
 LDFLAGS += $(SYSTEM_LDFLAGS)
 
+BORUVKA_CFLAGS ?=
+BORUVKA_LDFLAGS ?= -lboruvka
+
+HOOKE_CFLAGS ?=
+HOOKE_LDFLAGS ?= -lhooke
 
 PYTHON_CFLAGS  ?= $(shell $(PYTHON_CONFIG) --includes)
 PYTHON_LDFLAGS ?= $(shell $(PYTHON_CONFIG) --libs)

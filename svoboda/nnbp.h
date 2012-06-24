@@ -14,11 +14,11 @@
  *  See the License for more information.
  */
 
-#ifndef __FER_NNBP_H__
-#define __FER_NNBP_H__
+#ifndef __SVO_NNBP_H__
+#define __SVO_NNBP_H__
 
-#include <fermat/core.h>
-#include <fermat/vec.h>
+#include <boruvka/core.h>
+#include <boruvka/vec.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,79 +30,79 @@ extern "C" {
  */
 
 
-struct _fer_nnbp_layer_t {
+struct _svo_nnbp_layer_t {
     size_t size;   /*!< Size of layer */
-    fer_vec_t *x;  /*!< Layer output.
+    bor_vec_t *x;  /*!< Layer output.
                         x[i] = output of (i - 1)'th neuron
                         x[0] = -1 */
-    fer_vec_t **w; /*!< Layer weights.
+    bor_vec_t **w; /*!< Layer weights.
                         w[i] = weight of i'th neuron (~x[i + 1]) */
-    fer_vec_t **prevw;
+    bor_vec_t **prevw;
 };
-typedef struct _fer_nnbp_layer_t fer_nnbp_layer_t;
+typedef struct _svo_nnbp_layer_t svo_nnbp_layer_t;
 
 /**
  * Parameters
  * -----------
  */
-struct _fer_nnbp_params_t {
+struct _svo_nnbp_params_t {
     size_t layers_num;  /*!< Number of layers */
     size_t *layer_size; /*!< Number of neurons in layer (from input to
                              output). Size of array must be {.layers} */
-    fer_real_t alpha;   /*!< */
-    fer_real_t eta;     /*!< */
+    bor_real_t alpha;   /*!< */
+    bor_real_t eta;     /*!< */
 
-    fer_real_t lambda;  /*!< Sigmoid slope */
+    bor_real_t lambda;  /*!< Sigmoid slope */
     int func;           /*!< Transition function of single neuron.
-                             Default: FER_NNBP_SIGMOID */
+                             Default: SVO_NNBP_SIGMOID */
 };
-typedef struct _fer_nnbp_params_t fer_nnbp_params_t;
+typedef struct _svo_nnbp_params_t svo_nnbp_params_t;
 
 /**
  * Initialize parameters
  */
-void ferNNBPParamsInit(fer_nnbp_params_t *params);
+void svoNNBPParamsInit(svo_nnbp_params_t *params);
 
 /** Transition Functions */
-#define FER_NNBP_SIGMOID   0  /*!< sigmoid <-1, 1> */
-#define FER_NNBP_SIGMOID01 1  /*!< sigmoid <0, 1> */
+#define SVO_NNBP_SIGMOID   0  /*!< sigmoid <-1, 1> */
+#define SVO_NNBP_SIGMOID01 1  /*!< sigmoid <0, 1> */
 
 /**
  * Algorithm
  * ----------
  */
-struct _fer_nnbp_t {
+struct _svo_nnbp_t {
     size_t layers_num;  /*!< Number of layers */
-    fer_real_t alpha, eta, lambda;
+    bor_real_t alpha, eta, lambda;
 
-    fer_nnbp_layer_t *layers; /*!< Array of layers */
-    fer_vec_t *delta[2];
-    fer_vec_t *tmp;
+    svo_nnbp_layer_t *layers; /*!< Array of layers */
+    bor_vec_t *delta[2];
+    bor_vec_t *tmp;
 
     int func;
 };
-typedef struct _fer_nnbp_t fer_nnbp_t;
+typedef struct _svo_nnbp_t svo_nnbp_t;
 
 /**
  * Create new network
  */
-fer_nnbp_t *ferNNBPNew(const fer_nnbp_params_t *params);
+svo_nnbp_t *svoNNBPNew(const svo_nnbp_params_t *params);
 
 /**
  * Delete network
  */
-void ferNNBPDel(fer_nnbp_t *nn);
+void svoNNBPDel(svo_nnbp_t *nn);
 
 /**
  * Feeds network with an input.
  * An output of the network is returned.
  */
-const fer_vec_t *ferNNBPFeed(fer_nnbp_t *nn, const fer_vec_t *in);
+const bor_vec_t *svoNNBPFeed(svo_nnbp_t *nn, const bor_vec_t *in);
 
 /**
  * Returns error of feeded network (sum of sqares)
  */
-fer_real_t ferNNBPErr(const fer_nnbp_t *nn, const fer_vec_t *out);
+bor_real_t svoNNBPErr(const svo_nnbp_t *nn, const bor_vec_t *out);
 
 /**
  * Show one pattern for learning.
@@ -110,12 +110,12 @@ fer_real_t ferNNBPErr(const fer_nnbp_t *nn, const fer_vec_t *out);
  * A length of {in} must equal to {params.layer_size[0]} and
  * length of {out} must equal to number of neurons in output layer.
  */
-void ferNNBPLearn(fer_nnbp_t *nn, const fer_vec_t *in, const fer_vec_t *out);
+void svoNNBPLearn(svo_nnbp_t *nn, const bor_vec_t *in, const bor_vec_t *out);
 
 
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
-#endif /* __FER_NNBP_H__ */
+#endif /* __SVO_NNBP_H__ */
 

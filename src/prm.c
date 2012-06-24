@@ -15,54 +15,54 @@
  */
 
 #include <string.h>
-#include <fermat/prm.h>
-#include <fermat/alloc.h>
-#include <fermat/dbg.h>
+#include <svoboda/prm.h>
+#include <boruvka/alloc.h>
+#include <boruvka/dbg.h>
 
-static fer_prm_node_t *nodeNew(fer_prm_t *prm, const fer_vec_t *p);
-static void nodeDel(fer_prm_t *prm, fer_prm_node_t *n);
-static void edgeNew(fer_prm_t *prm, fer_prm_node_t *n1, fer_prm_node_t *n2);
-static void edgeDel(fer_prm_t *prm, fer_net_edge_t *n);
-static void nodeNetDel(fer_net_node_t *n, void *);
-static void edgeNetDel(fer_net_edge_t *n, void *);
-static fer_prm_node_t *connectNewNode(fer_prm_t *prm, const fer_vec_t *c);
-static void nodeDelWithEdges(fer_prm_t *prm, fer_prm_node_t *n);
+static svo_prm_node_t *nodeNew(svo_prm_t *prm, const bor_vec_t *p);
+static void nodeDel(svo_prm_t *prm, svo_prm_node_t *n);
+static void edgeNew(svo_prm_t *prm, svo_prm_node_t *n1, svo_prm_node_t *n2);
+static void edgeDel(svo_prm_t *prm, bor_net_edge_t *n);
+static void nodeNetDel(bor_net_node_t *n, void *);
+static void edgeNetDel(bor_net_edge_t *n, void *);
+static svo_prm_node_t *connectNewNode(svo_prm_t *prm, const bor_vec_t *c);
+static void nodeDelWithEdges(svo_prm_t *prm, svo_prm_node_t *n);
 
 /** Finds maximaly prm->params.max_neighbors nearest to given node.
  *  Number of found nodes is returned. */
-static size_t findNearest(fer_prm_t *prm, const fer_vec_t *conf,
-                          fer_prm_node_t **nearest, fer_gug_el_t **els);
+static size_t findNearest(svo_prm_t *prm, const bor_vec_t *conf,
+                          svo_prm_node_t **nearest, bor_gug_el_t **els);
 /** Creates new component consisting of one node */
-static void componentNew(fer_prm_t *prm, fer_prm_node_t *n);
+static void componentNew(svo_prm_t *prm, svo_prm_node_t *n);
 /** Returns true if two nodes belong to same component */
-static int sameComponent(const fer_prm_node_t *n1, const fer_prm_node_t *n2);
+static int sameComponent(const svo_prm_node_t *n1, const svo_prm_node_t *n2);
 /** Returns top component of node */
-static fer_prm_component_t *topComponent(const fer_prm_node_t *n);
+static svo_prm_component_t *topComponent(const svo_prm_node_t *n);
 
 
-void ferPRMOpsInit(fer_prm_ops_t *ops)
+void svoPRMOpsInit(svo_prm_ops_t *ops)
 {
-    memset(ops, 0, sizeof(fer_prm_ops_t));
+    memset(ops, 0, sizeof(svo_prm_ops_t));
 }
 
-void ferPRMParamsInit(fer_prm_params_t *params)
+void svoPRMParamsInit(svo_prm_params_t *params)
 {
     params->d = 2;
 
     params->max_dist = 0.001;
     params->max_neighbors = 10;
 
-    ferGUGParamsInit(&params->gug);
+    borGUGParamsInit(&params->gug);
 }
 
 
-fer_prm_t *ferPRMNew(const fer_prm_ops_t *ops,
-                     const fer_prm_params_t *params)
+svo_prm_t *svoPRMNew(const svo_prm_ops_t *ops,
+                     const svo_prm_params_t *params)
 {
-    fer_prm_t *prm;
-    fer_gug_params_t pcells;
+    svo_prm_t *prm;
+    bor_gug_params_t pcells;
 
-    prm = FER_ALLOC(fer_prm_t);
+    prm = BOR_ALLOC(svo_prm_t);
 
     prm->params = *params;
     prm->ops    = *ops;
@@ -77,57 +77,57 @@ fer_prm_t *ferPRMNew(const fer_prm_ops_t *ops,
     if (prm->ops.callback_data == NULL)
         prm->ops.callback_data = prm->ops.data;
 
-    prm->net = ferNetNew();
+    prm->net = borNetNew();
 
     pcells   = params->gug;
     pcells.dim = params->d;
-    prm->gug = ferGUGNew(&pcells);
+    prm->gug = borGUGNew(&pcells);
 
-    ferListInit(&prm->components);
+    borListInit(&prm->components);
 
     return prm;
 }
 
-void ferPRMDel(fer_prm_t *prm)
+void svoPRMDel(svo_prm_t *prm)
 {
-    fer_list_t *item;
-    fer_prm_component_t *comp;
+    bor_list_t *item;
+    svo_prm_component_t *comp;
 
     if (prm->net)
-        ferNetDel2(prm->net,
+        borNetDel2(prm->net,
                    nodeNetDel, (void *)prm,
                    edgeNetDel, (void *)prm);
     if (prm->gug)
-        ferGUGDel(prm->gug);
+        borGUGDel(prm->gug);
 
-    while (!ferListEmpty(&prm->components)){
-        item = ferListNext(&prm->components);
-        ferListDel(item);
-        comp = fer_container_of(item, fer_prm_component_t, list);
-        FER_FREE(comp);
+    while (!borListEmpty(&prm->components)){
+        item = borListNext(&prm->components);
+        borListDel(item);
+        comp = bor_container_of(item, svo_prm_component_t, list);
+        BOR_FREE(comp);
     }
 
-    FER_FREE(prm);
+    BOR_FREE(prm);
 }
 
-void ferPRMRun(fer_prm_t *prm)
+void svoPRMRun(svo_prm_t *prm)
 {
-    const fer_vec_t *c;
-    fer_prm_node_t *cn;
-    fer_prm_node_t **nearest;
-    fer_gug_el_t **tmp_nearest;
+    const bor_vec_t *c;
+    svo_prm_node_t *cn;
+    svo_prm_node_t **nearest;
+    bor_gug_el_t **tmp_nearest;
     size_t i, nearest_len;
     unsigned long counter = 1;
 
-    nearest = FER_ALLOC_ARR(fer_prm_node_t *, prm->params.max_neighbors);
-    tmp_nearest = FER_ALLOC_ARR(fer_gug_el_t *, prm->params.max_neighbors);
+    nearest = BOR_ALLOC_ARR(svo_prm_node_t *, prm->params.max_neighbors);
+    tmp_nearest = BOR_ALLOC_ARR(bor_gug_el_t *, prm->params.max_neighbors);
 
     while (!prm->ops.terminate(prm->ops.terminate_data)){
         // obtain random configuration
         c = prm->ops.conf(prm->ops.conf_data);
 
         // evaluate configuration
-        if (prm->ops.eval(c, prm->ops.eval_data) == FER_PRM_FREE){
+        if (prm->ops.eval(c, prm->ops.eval_data) == SVO_PRM_FREE){
             // we have configuration in free space
 
             // obtain nearest nodes
@@ -161,16 +161,16 @@ void ferPRMRun(fer_prm_t *prm)
         }
     }
 
-    FER_FREE(nearest);
-    FER_FREE(tmp_nearest);
+    BOR_FREE(nearest);
+    BOR_FREE(tmp_nearest);
 }
 
-void ferPRMDumpSVT(fer_prm_t *prm, FILE *out, const char *name)
+void svoPRMDumpSVT(svo_prm_t *prm, FILE *out, const char *name)
 {
-    fer_list_t *list, *item;
-    fer_net_node_t *nn;
-    fer_prm_node_t *n;
-    fer_net_edge_t *e;
+    bor_list_t *list, *item;
+    bor_net_node_t *nn;
+    svo_prm_node_t *n;
+    bor_net_edge_t *e;
     size_t i, id1, id2;
 
     fprintf(out, "--------\n");
@@ -180,29 +180,29 @@ void ferPRMDumpSVT(fer_prm_t *prm, FILE *out, const char *name)
     }
 
     fprintf(out, "Points:\n");
-    list = ferNetNodes(prm->net);
+    list = borNetNodes(prm->net);
     i = 0;
-    FER_LIST_FOR_EACH(list, item){
-        nn = FER_LIST_ENTRY(item, fer_net_node_t, list);
-        n  = fer_container_of(nn, fer_prm_node_t, node);
+    BOR_LIST_FOR_EACH(list, item){
+        nn = BOR_LIST_ENTRY(item, bor_net_node_t, list);
+        n  = bor_container_of(nn, svo_prm_node_t, node);
 
         n->_id = i++;
-        ferVec2Print((const fer_vec2_t *)n->conf, out);
+        borVec2Print((const bor_vec2_t *)n->conf, out);
         fprintf(out, "\n");
     }
 
 
     fprintf(out, "Edges:\n");
-    list = ferNetEdges(prm->net);
-    FER_LIST_FOR_EACH(list, item){
-        e = FER_LIST_ENTRY(item, fer_net_edge_t, list);
+    list = borNetEdges(prm->net);
+    BOR_LIST_FOR_EACH(list, item){
+        e = BOR_LIST_ENTRY(item, bor_net_edge_t, list);
 
-        nn = ferNetEdgeNode(e, 0);
-        n  = fer_container_of(nn, fer_prm_node_t, node);
+        nn = borNetEdgeNode(e, 0);
+        n  = bor_container_of(nn, svo_prm_node_t, node);
         id1 = n->_id;
 
-        nn = ferNetEdgeNode(e, 1);
-        n  = fer_container_of(nn, fer_prm_node_t, node);
+        nn = borNetEdgeNode(e, 1);
+        n  = bor_container_of(nn, svo_prm_node_t, node);
         id2 = n->_id;
 
         fprintf(out, "%d %d\n", (int)id1, (int)id2);
@@ -213,70 +213,70 @@ void ferPRMDumpSVT(fer_prm_t *prm, FILE *out, const char *name)
 
 
 /*** Find path ***/
-static void findPathExpand(fer_dij_node_t *_n, fer_list_t *expand, void *data)
+static void findPathExpand(bor_dij_node_t *_n, bor_list_t *expand, void *data)
 {
-    fer_prm_t *prm = (fer_prm_t *)data;
-    fer_list_t *list, *item;
-    fer_prm_node_t *n, *o;
-    fer_net_edge_t *edge;
-    fer_net_node_t *node;
-    fer_real_t dist;
+    svo_prm_t *prm = (svo_prm_t *)data;
+    bor_list_t *list, *item;
+    svo_prm_node_t *n, *o;
+    bor_net_edge_t *edge;
+    bor_net_node_t *node;
+    bor_real_t dist;
 
-    n = fer_container_of(_n, fer_prm_node_t, dij);
+    n = bor_container_of(_n, svo_prm_node_t, dij);
 
-    list = ferNetNodeEdges(&n->node);
-    FER_LIST_FOR_EACH(list, item){
-        edge = ferNetEdgeFromNodeList(item);
-        node = ferNetEdgeOtherNode(edge, &n->node);
-        o    = fer_container_of(node, fer_prm_node_t, node);
+    list = borNetNodeEdges(&n->node);
+    BOR_LIST_FOR_EACH(list, item){
+        edge = borNetEdgeFromNodeList(item);
+        node = borNetEdgeOtherNode(edge, &n->node);
+        o    = bor_container_of(node, svo_prm_node_t, node);
 
-        if (!ferDijNodeClosed(&o->dij)){
-            dist = ferVecDist(prm->params.d, n->conf, o->conf);
-            ferDijNodeAdd(&o->dij, expand, dist);
+        if (!borDijNodeClosed(&o->dij)){
+            dist = borVecDist(prm->params.d, n->conf, o->conf);
+            borDijNodeAdd(&o->dij, expand, dist);
         }
     }
 }
 
 /** Initializes all nodes in net for dijkstra search */
-static void findPathDijInit(fer_prm_t *prm)
+static void findPathDijInit(svo_prm_t *prm)
 {
-    fer_list_t *list, *item;
-    fer_net_node_t *node;
-    fer_prm_node_t *n;
+    bor_list_t *list, *item;
+    bor_net_node_t *node;
+    svo_prm_node_t *n;
 
-    list = ferNetNodes(prm->net);
-    FER_LIST_FOR_EACH(list, item){
-        node = FER_LIST_ENTRY(item, fer_net_node_t, list);
-        n    = fer_container_of(node, fer_prm_node_t, node);
-        ferDijNodeInit(&n->dij);
+    list = borNetNodes(prm->net);
+    BOR_LIST_FOR_EACH(list, item){
+        node = BOR_LIST_ENTRY(item, bor_net_node_t, list);
+        n    = bor_container_of(node, svo_prm_node_t, node);
+        borDijNodeInit(&n->dij);
     }
 }
 
 /** Fills given list by path from s to g.
  *  It is assumed that the path exists! */
-static void obtainPath(fer_prm_node_t *s, fer_prm_node_t *g,
-                       fer_list_t *list)
+static void obtainPath(svo_prm_node_t *s, svo_prm_node_t *g,
+                       bor_list_t *list)
 {
-    fer_prm_node_t *n;
-    fer_dij_node_t *dn;
+    svo_prm_node_t *n;
+    bor_dij_node_t *dn;
 
-    ferListPrepend(list, &g->path);
+    borListPrepend(list, &g->path);
     dn = g->dij.prev;
     while (dn != &s->dij){
-        n = fer_container_of(dn, fer_prm_node_t, dij);
-        ferListPrepend(list, &n->path);
+        n = bor_container_of(dn, svo_prm_node_t, dij);
+        borListPrepend(list, &n->path);
 
         dn = dn->prev;
     }
 }
 
-int ferPRMFindPath(fer_prm_t *prm,
-                   const fer_vec_t *cstart, const fer_vec_t *cgoal,
-                   fer_list_t *list)
+int svoPRMFindPath(svo_prm_t *prm,
+                   const bor_vec_t *cstart, const bor_vec_t *cgoal,
+                   bor_list_t *list)
 {
-    fer_dij_ops_t ops;
-    fer_dij_t *dij;
-    fer_prm_node_t *start, *goal;
+    bor_dij_ops_t ops;
+    bor_dij_t *dij;
+    svo_prm_node_t *start, *goal;
     int result;
 
     // create start and goal nodes
@@ -287,19 +287,19 @@ int ferPRMFindPath(fer_prm_t *prm,
     findPathDijInit(prm);
 
     // initialize operations
-    ferDijOpsInit(&ops);
+    borDijOpsInit(&ops);
     ops.expand = findPathExpand;
     ops.data   = (void *)prm;
 
     // create dijkstra algorithm
-    dij = ferDijNew(&ops);
+    dij = borDijNew(&ops);
 
     // run dijkstra
-    result = ferDijRun(dij, &start->dij, &goal->dij);
+    result = borDijRun(dij, &start->dij, &goal->dij);
 
     if (result == 0){
         obtainPath(start, goal, list);
-        ferDijDel(dij);
+        borDijDel(dij);
         return 0;
     }
 
@@ -307,44 +307,44 @@ int ferPRMFindPath(fer_prm_t *prm,
     nodeDelWithEdges(prm, start);
     nodeDelWithEdges(prm, goal);
 
-    ferDijDel(dij);
+    borDijDel(dij);
 
     return -1;
 }
 
 
 
-static fer_prm_node_t *nodeNew(fer_prm_t *prm, const fer_vec_t *p)
+static svo_prm_node_t *nodeNew(svo_prm_t *prm, const bor_vec_t *p)
 {
-    fer_prm_node_t *n;
+    svo_prm_node_t *n;
 
-    n = FER_ALLOC(fer_prm_node_t);
-    n->conf = ferVecClone(prm->params.d, p);
+    n = BOR_ALLOC(svo_prm_node_t);
+    n->conf = borVecClone(prm->params.d, p);
     n->comp = NULL;
-    ferNetAddNode(prm->net, &n->node);
+    borNetAddNode(prm->net, &n->node);
 
-    ferGUGElInit(&n->gug, n->conf);
-    ferGUGAdd(prm->gug, &n->gug);
+    borGUGElInit(&n->gug, n->conf);
+    borGUGAdd(prm->gug, &n->gug);
 
     return n;
 }
 
-static void nodeDel(fer_prm_t *prm, fer_prm_node_t *n)
+static void nodeDel(svo_prm_t *prm, svo_prm_node_t *n)
 {
     if (n->conf)
-        ferVecDel(n->conf);
-    ferNetRemoveNode(prm->net, &n->node);
-    ferGUGRemove(prm->gug, &n->gug);
-    FER_FREE(n);
+        borVecDel(n->conf);
+    borNetRemoveNode(prm->net, &n->node);
+    borGUGRemove(prm->gug, &n->gug);
+    BOR_FREE(n);
 }
 
-static void edgeNew(fer_prm_t *prm, fer_prm_node_t *n1, fer_prm_node_t *n2)
+static void edgeNew(svo_prm_t *prm, svo_prm_node_t *n1, svo_prm_node_t *n2)
 {
-    fer_net_edge_t *e;
-    fer_prm_component_t *c1, *c2;
+    bor_net_edge_t *e;
+    svo_prm_component_t *c1, *c2;
 
-    e = FER_ALLOC(fer_net_edge_t);
-    ferNetAddEdge(prm->net, e, &n1->node, &n2->node);
+    e = BOR_ALLOC(bor_net_edge_t);
+    borNetAddEdge(prm->net, e, &n1->node, &n2->node);
 
     if (n1->comp == NULL){
         n1->comp = n2->comp;
@@ -357,41 +357,41 @@ static void edgeNew(fer_prm_t *prm, fer_prm_node_t *n1, fer_prm_node_t *n2)
     }
 }
 
-static void edgeDel(fer_prm_t *prm, fer_net_edge_t *e)
+static void edgeDel(svo_prm_t *prm, bor_net_edge_t *e)
 {
-    ferNetRemoveEdge(prm->net, e);
-    FER_FREE(e);
+    borNetRemoveEdge(prm->net, e);
+    BOR_FREE(e);
 }
 
-static void nodeNetDel(fer_net_node_t *_n, void *_)
+static void nodeNetDel(bor_net_node_t *_n, void *_)
 {
-    fer_prm_node_t *n;
+    svo_prm_node_t *n;
 
-    n = fer_container_of(_n, fer_prm_node_t, node);
+    n = bor_container_of(_n, svo_prm_node_t, node);
     if (n->conf)
-        ferVecDel(n->conf);
-    FER_FREE(n);
+        borVecDel(n->conf);
+    BOR_FREE(n);
 }
 
-static void edgeNetDel(fer_net_edge_t *n, void *_)
+static void edgeNetDel(bor_net_edge_t *n, void *_)
 {
-    FER_FREE(n);
+    BOR_FREE(n);
 }
 
 
-static size_t findNearest(fer_prm_t *prm, const fer_vec_t *conf,
-                          fer_prm_node_t **nearest, fer_gug_el_t **els)
+static size_t findNearest(svo_prm_t *prm, const bor_vec_t *conf,
+                          svo_prm_node_t **nearest, bor_gug_el_t **els)
 {
     size_t size, found;
-    fer_prm_node_t *m;
+    svo_prm_node_t *m;
 
-    size = ferGUGNearest(prm->gug, conf,
+    size = borGUGNearest(prm->gug, conf,
                               prm->params.max_neighbors, els);
 
     for (found = 0; found < size; found++){
-        m = fer_container_of(els[found], fer_prm_node_t, gug);
+        m = bor_container_of(els[found], svo_prm_node_t, gug);
 
-        if (ferVecDist(prm->params.d, m->conf, conf) < prm->params.max_dist){
+        if (borVecDist(prm->params.d, m->conf, conf) < prm->params.max_dist){
             nearest[found] = m;
         }else{
             break;
@@ -401,20 +401,20 @@ static size_t findNearest(fer_prm_t *prm, const fer_vec_t *conf,
     return found;
 }
 
-static void componentNew(fer_prm_t *prm, fer_prm_node_t *n)
+static void componentNew(svo_prm_t *prm, svo_prm_node_t *n)
 {
-    fer_prm_component_t *comp;
+    svo_prm_component_t *comp;
 
-    comp = FER_ALLOC(fer_prm_component_t);
+    comp = BOR_ALLOC(svo_prm_component_t);
     comp->parent = NULL;
-    ferListAppend(&prm->components, &comp->list);
+    borListAppend(&prm->components, &comp->list);
 
     n->comp = comp;
 }
 
-static int sameComponent(const fer_prm_node_t *n1, const fer_prm_node_t *n2)
+static int sameComponent(const svo_prm_node_t *n1, const svo_prm_node_t *n2)
 {
-    fer_prm_component_t *c1, *c2;
+    svo_prm_component_t *c1, *c2;
     if (n1->comp == NULL || n2->comp == NULL)
         return 0;
 
@@ -424,9 +424,9 @@ static int sameComponent(const fer_prm_node_t *n1, const fer_prm_node_t *n2)
     return c1 == c2;
 }
 
-static fer_prm_component_t *topComponent(const fer_prm_node_t *n)
+static svo_prm_component_t *topComponent(const svo_prm_node_t *n)
 {
-    fer_prm_component_t *c;
+    svo_prm_component_t *c;
 
     if (n->comp == NULL)
         return NULL;
@@ -438,15 +438,15 @@ static fer_prm_component_t *topComponent(const fer_prm_node_t *n)
     return c;
 }
 
-static fer_prm_node_t *connectNewNode(fer_prm_t *prm, const fer_vec_t *c)
+static svo_prm_node_t *connectNewNode(svo_prm_t *prm, const bor_vec_t *c)
 {
-    fer_prm_node_t **nearest;
-    fer_gug_el_t **tmp_nearest;
+    svo_prm_node_t **nearest;
+    bor_gug_el_t **tmp_nearest;
     size_t nearest_len, i;
-    fer_prm_node_t *n;
+    svo_prm_node_t *n;
 
-    nearest = FER_ALLOC_ARR(fer_prm_node_t *, prm->params.max_neighbors);
-    tmp_nearest = FER_ALLOC_ARR(fer_gug_el_t *, prm->params.max_neighbors);
+    nearest = BOR_ALLOC_ARR(svo_prm_node_t *, prm->params.max_neighbors);
+    tmp_nearest = BOR_ALLOC_ARR(bor_gug_el_t *, prm->params.max_neighbors);
 
     nearest_len = findNearest(prm, c, nearest, tmp_nearest);
 
@@ -464,20 +464,20 @@ static fer_prm_node_t *connectNewNode(fer_prm_t *prm, const fer_vec_t *c)
         }
     }
 
-    FER_FREE(nearest);
-    FER_FREE(tmp_nearest);
+    BOR_FREE(nearest);
+    BOR_FREE(tmp_nearest);
 
     return n;
 }
 
-static void nodeDelWithEdges(fer_prm_t *prm, fer_prm_node_t *n)
+static void nodeDelWithEdges(svo_prm_t *prm, svo_prm_node_t *n)
 {
-    fer_list_t *list, *item, *item_tmp;
-    fer_net_edge_t *edge;
+    bor_list_t *list, *item, *item_tmp;
+    bor_net_edge_t *edge;
 
-    list = ferNetNodeEdges(&n->node);
-    FER_LIST_FOR_EACH_SAFE(list, item, item_tmp){
-        edge = ferNetEdgeFromNodeList(item);
+    list = borNetNodeEdges(&n->node);
+    BOR_LIST_FOR_EACH_SAFE(list, item, item_tmp){
+        edge = borNetEdgeFromNodeList(item);
         edgeDel(prm, edge);
     }
     nodeDel(prm, n);

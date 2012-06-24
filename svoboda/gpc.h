@@ -14,21 +14,21 @@
  *  See the License for more information.
  */
 
-#ifndef __FER_GPC_H__
-#define __FER_GPC_H__
+#ifndef __SVO_GPC_H__
+#define __SVO_GPC_H__
 
-#include <fermat/core.h>
-#include <fermat/rand-mt.h>
-#include <fermat/tasks.h>
+#include <boruvka/core.h>
+#include <boruvka/rand-mt.h>
+#include <boruvka/tasks.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-struct _fer_gpc_t;
-struct _fer_gpc_tree_t;
-struct _fer_gpc_pred_t;
-struct _fer_gpc_class_t;
+struct _svo_gpc_t;
+struct _svo_gpc_tree_t;
+struct _svo_gpc_pred_t;
+struct _svo_gpc_class_t;
 
 
 /**
@@ -42,7 +42,7 @@ struct _fer_gpc_class_t;
  * Operators
  * ----------
  *
- * See fer_gpc_ops_t.
+ * See svo_gpc_ops_t.
  */
 
 /** vvvv */
@@ -51,24 +51,24 @@ struct _fer_gpc_class_t;
  * Returns fitness of a decision tree.
  * The argument {class} is array of classification results per data row.
  */
-typedef fer_real_t (*fer_gpc_fitness)(struct _fer_gpc_t *gpc, int *class, void *);
+typedef bor_real_t (*svo_gpc_fitness)(struct _svo_gpc_t *gpc, int *class, void *);
 
 /**
  * Ought to return {i}'th row from dataset
  */
-typedef void *(*fer_gpc_data_row)(struct _fer_gpc_t *gpc, int i, void *);
+typedef void *(*svo_gpc_data_row)(struct _svo_gpc_t *gpc, int i, void *);
 
 /**
  * Callback that is called periodically every .callback_period'th cycle.
  */
-typedef void (*fer_gpc_callback)(struct _fer_gpc_t *gpc, void *);
+typedef void (*svo_gpc_callback)(struct _svo_gpc_t *gpc, void *);
 /** ^^^^ */
 
-struct _fer_gpc_ops_t {
-    fer_gpc_fitness fitness;       /*!< Default: NULL, must be defined */
-    fer_gpc_data_row data_row;     /*!< Default: NULL, must be defined */
+struct _svo_gpc_ops_t {
+    svo_gpc_fitness fitness;       /*!< Default: NULL, must be defined */
+    svo_gpc_data_row data_row;     /*!< Default: NULL, must be defined */
 
-    fer_gpc_callback callback;     /*!< Default: NULL */
+    svo_gpc_callback callback;     /*!< Default: NULL */
     unsigned long callback_period; /*!< Default: 0, i.e., never */
 
     void *data; /*!< Data pointer that will be provided to all callbacks if
@@ -77,12 +77,12 @@ struct _fer_gpc_ops_t {
     void *data_row_data;
     void *callback_data;
 };
-typedef struct _fer_gpc_ops_t fer_gpc_ops_t;
+typedef struct _svo_gpc_ops_t svo_gpc_ops_t;
 
 /**
  * Initializes operators to default values
  */
-void ferGPCOpsInit(fer_gpc_ops_t *ops);
+void svoGPCOpsInit(svo_gpc_ops_t *ops);
 
 
 
@@ -90,7 +90,7 @@ void ferGPCOpsInit(fer_gpc_ops_t *ops);
  * Parameters
  * -----------
  */
-struct _fer_gpc_params_t {
+struct _svo_gpc_params_t {
     int pop_size;            /*!< Size of population. Default: 1 */
     int max_depth;           /*!< Maximal depth of a tree. Default: 5 */
     int keep_best;           /*!< Number of best individuals that ought to
@@ -107,9 +107,9 @@ struct _fer_gpc_params_t {
 
     /* Probabilities of undergone actions. Any numbers can be used because
      * all will be normized to (pr + pc + pm) = 1 */
-    fer_real_t pr;  /*!< Probability of reproduction. Default: 14 */
-    fer_real_t pc;  /*!< Probability of crossover. Default: 85 */
-    fer_real_t pm;  /*!< Probability of mutation. Default: 1 */
+    bor_real_t pr;  /*!< Probability of reproduction. Default: 14 */
+    bor_real_t pc;  /*!< Probability of crossover. Default: 85 */
+    bor_real_t pm;  /*!< Probability of mutation. Default: 1 */
 
     unsigned long simplify;      /*!< A simplification of the trees will be
                                       executed every {simplify} step.
@@ -124,12 +124,12 @@ struct _fer_gpc_params_t {
     int parallel; /*!< Number of parallel threads that will be used.
                        Default: 0 */
 };
-typedef struct _fer_gpc_params_t fer_gpc_params_t;
+typedef struct _svo_gpc_params_t svo_gpc_params_t;
 
 /**
  * Initialize parameters to default values
  */
-void ferGPCParamsInit(fer_gpc_params_t *params);
+void svoGPCParamsInit(svo_gpc_params_t *params);
 
 
 
@@ -138,26 +138,26 @@ void ferGPCParamsInit(fer_gpc_params_t *params);
  * ----------
  */
 
-#define FER_GPC_PRED_INIT_SIZE 10
-#define FER_GPC_CLASS_INIT_SIZE 10
+#define SVO_GPC_PRED_INIT_SIZE 10
+#define SVO_GPC_CLASS_INIT_SIZE 10
 
-struct _fer_gpc_t {
-    fer_gpc_params_t params;
-    fer_gpc_ops_t ops;
+struct _svo_gpc_t {
+    svo_gpc_params_t params;
+    svo_gpc_ops_t ops;
 
-    fer_rand_mt_t *rand;
+    bor_rand_mt_t *rand;
 
-    struct _fer_gpc_tree_t **pop[3]; /*!< Population (actual and two tmps) */
+    struct _svo_gpc_tree_t **pop[3]; /*!< Population (actual and two tmps) */
     int pop_size[2];                 /*!< Current size of populations */
     int pop_cur;                     /*!< Idx of current population array */
 
-    struct _fer_gpc_pred_t *pred;    /*!< List of predicates */
+    struct _svo_gpc_pred_t *pred;    /*!< List of predicates */
     int pred_size, pred_len;
-    struct _fer_gpc_class_t *class;  /*!< List of classes */
+    struct _svo_gpc_class_t *class;  /*!< List of classes */
     int class_size, class_len;
 
     int threads;
-    fer_tasks_t *tasks;
+    bor_tasks_t *tasks;
     int **eval_results; /*!< Array of results from evaluation */
 
 
@@ -165,110 +165,110 @@ struct _fer_gpc_t {
         unsigned long elapsed; /*!< Number of elapsed steps */
     } stats;
 };
-typedef struct _fer_gpc_t fer_gpc_t;
+typedef struct _svo_gpc_t svo_gpc_t;
 
 /**
  * Creates a new instance of GPC
  */
-fer_gpc_t *ferGPCNew(const fer_gpc_ops_t *ops, const fer_gpc_params_t *params);
+svo_gpc_t *svoGPCNew(const svo_gpc_ops_t *ops, const svo_gpc_params_t *params);
 
 /**
  * Deletes GPC
  */
-void ferGPCDel(fer_gpc_t *gpc);
+void svoGPCDel(svo_gpc_t *gpc);
 
 /**
  * Returns current max. depth of a tree individual.
  */
-int ferGPCMaxDepth(const fer_gpc_t *gpc);
+int svoGPCMaxDepth(const svo_gpc_t *gpc);
 
 /**
  * Predicate callback.
  * Should return the number of next descendant node in evaluating a
  * decision tree.
  */
-typedef int (*fer_gpc_pred)(fer_gpc_t *gpc, void *mem, void *data, void *userdata);
+typedef int (*svo_gpc_pred)(svo_gpc_t *gpc, void *mem, void *data, void *userdata);
 
 /**
  * Initialize callback a predicate data
  */
-typedef void (*fer_gpc_pred_init)(fer_gpc_t *gpc, void *mem, void *userdata);
+typedef void (*svo_gpc_pred_init)(svo_gpc_t *gpc, void *mem, void *userdata);
 
 /**
  * Format a callback into given string.
  */
-typedef void (*fer_gpc_pred_format)(fer_gpc_t *gpc, void *mem, void *userdata,
+typedef void (*svo_gpc_pred_format)(svo_gpc_t *gpc, void *mem, void *userdata,
                                     char *str, size_t str_maxlen);
 
 /**
  * Adds a new predicate.
  * TODO
  */
-int ferGPCAddPred(fer_gpc_t *gpc,
-                  fer_gpc_pred pred,
-                  fer_gpc_pred_init init,
-                  fer_gpc_pred_format format,
+int svoGPCAddPred(svo_gpc_t *gpc,
+                  svo_gpc_pred pred,
+                  svo_gpc_pred_init init,
+                  svo_gpc_pred_format format,
                   int num_descendants, size_t memsize,
                   void *userdata);
 
 /**
  * Adds a new class (terminal).
  */
-int ferGPCAddClass(fer_gpc_t *gpc, int class_id);
+int svoGPCAddClass(svo_gpc_t *gpc, int class_id);
 
 
 
 /**
  * Run GPC algorithm
  */
-int ferGPCRun(fer_gpc_t *gpc);
+int svoGPCRun(svo_gpc_t *gpc);
 
 /**
  * Returns fitness of the best individual
  */
-fer_real_t ferGPCBestFitness(const fer_gpc_t *gpc);
+bor_real_t svoGPCBestFitness(const svo_gpc_t *gpc);
 
 /**
  * Returns i'th best tree from the current population
  */
-void *ferGPCTree(const fer_gpc_t *gpc, int i);
+void *svoGPCTree(const svo_gpc_t *gpc, int i);
 
 /**
  * Evaluates a tree using the specified data and returns a resulting class.
  */
-int ferGPCTreeEval(fer_gpc_t *gpc, void *tree, void *data);
+int svoGPCTreeEval(svo_gpc_t *gpc, void *tree, void *data);
 
 /**
  * Returns a depth of the tree
  */
-int ferGPCTreeDepth(fer_gpc_t *gpc, void *tree);
+int svoGPCTreeDepth(svo_gpc_t *gpc, void *tree);
 
 /**
  * Prints formated tree in form of C function to specified file.
  */
-void ferGPCTreePrintC(fer_gpc_t *gpc, void *tree, const char *func_name, FILE *out);
+void svoGPCTreePrintC(svo_gpc_t *gpc, void *tree, const char *func_name, FILE *out);
 
 /**
  * Returns random number from range
  */
-_fer_inline fer_real_t ferGPCRand(fer_gpc_t *gpc, fer_real_t f, fer_real_t t);
+_bor_inline bor_real_t svoGPCRand(svo_gpc_t *gpc, bor_real_t f, bor_real_t t);
 
 /**
  * Returns random number [0, 1)
  */
-_fer_inline fer_real_t ferGPCRand01(fer_gpc_t *gpc);
+_bor_inline bor_real_t svoGPCRand01(svo_gpc_t *gpc);
 
 /**
  * Returns random integer number [f, t)
  */
-_fer_inline int ferGPCRandInt(fer_gpc_t *gpc, int f, int t);
+_bor_inline int svoGPCRandInt(svo_gpc_t *gpc, int f, int t);
 
 
 /**
  * Statistics
  * -----------
  */
-struct _fer_gpc_stats_t {
+struct _svo_gpc_stats_t {
     float min_fitness;
     float max_fitness;
     float avg_fitness;
@@ -284,36 +284,36 @@ struct _fer_gpc_stats_t {
 
     unsigned long elapsed; /*!< Number of elapsed steps */
 };
-typedef struct _fer_gpc_stats_t fer_gpc_stats_t;
+typedef struct _svo_gpc_stats_t svo_gpc_stats_t;
 
 /**
  * Fills given structure with statistics about from current population
  */
-void ferGPCStats(const fer_gpc_t *gpc, fer_gpc_stats_t *stats);
+void svoGPCStats(const svo_gpc_t *gpc, svo_gpc_stats_t *stats);
 
 
 
-int __ferGPCPredMemsize(const fer_gpc_t *gpc, int idx);
+int __svoGPCPredMemsize(const svo_gpc_t *gpc, int idx);
 
 /**** INLINES ****/
-_fer_inline fer_real_t ferGPCRand(fer_gpc_t *gpc, fer_real_t f, fer_real_t t)
+_bor_inline bor_real_t svoGPCRand(svo_gpc_t *gpc, bor_real_t f, bor_real_t t)
 {
-    return ferRandMT(gpc->rand, f, t);
+    return borRandMT(gpc->rand, f, t);
 }
 
-_fer_inline fer_real_t ferGPCRand01(fer_gpc_t *gpc)
+_bor_inline bor_real_t svoGPCRand01(svo_gpc_t *gpc)
 {
-    return ferRandMT01(gpc->rand);
+    return borRandMT01(gpc->rand);
 }
 
-_fer_inline int ferGPCRandInt(fer_gpc_t *gpc, int f, int t)
+_bor_inline int svoGPCRandInt(svo_gpc_t *gpc, int f, int t)
 {
-    return FER_MIN(ferRandMT(gpc->rand, f, t), t - 1);
+    return BOR_MIN(borRandMT(gpc->rand, f, t), t - 1);
 }
 
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
 
-#endif /* __FER_GPC_H__ */
+#endif /* __SVO_GPC_H__ */
 
