@@ -6,38 +6,12 @@ SPHINXBUILD   = sphinx-build
 PAPER         = a4
 BUILDDIR      = .
 
-RSTS  = core compiler alloc
-RSTS += list rand rand-mt timer parse
-RSTS += cfg
-RSTS += opts
-
-RSTS += vec4 vec3 vec2 vec
-RSTS += quat
-RSTS += mat4 mat3
-RSTS += predicates
-
-RSTS += pc
-
-RSTS += nn gug nearest-linear vptree nn-linear
-
-RSTS += mesh3 net qhull chull3
-
-RSTS += fibo pairheap dij
-
-RSTS += gng gng-eu gsrm
+RSTS  = gng gng-eu gsrm
 RSTS += prm rrt gnnp
-
 RSTS += ga
 RSTS += nnbp
 
-RSTS += tasks task-pool hmap hfunc barrier
-
-RSTS += opencl
-RSTS += surf-matching
-
-RSTS += cd-params cd-cd cd-geom cd-ode
-
-RSTS := $(foreach header,$(RSTS),fer-$(header).h.rst)
+RSTS := $(foreach header,$(RSTS),svo-$(header).h.rst)
 
 
 # Internal variables.
@@ -157,7 +131,7 @@ doctest:
 	@echo "Testing of doctests in the sources finished, look at the " \
 	      "results in $(BUILDDIR)/doctest/output.txt."
 
-fer-%.h.rst: ../fermat/%.h
+svo-%.h.rst: ../svoboda/%.h
 	$(PYTHON) doc.py $< >$@
 
 clean:

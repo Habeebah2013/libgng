@@ -8,17 +8,7 @@ Welcome to Svoboda's documentation!
 .. toctree::
    :maxdepth: 1
 
-   core.rst
-   vecmat.rst
-   geom.rst
-   nearest.rst
-   par.rst
    gnn.rst
    plan.rst
    various.rst
-
-.. toctree::
-   :maxdepth: 1
-
-   cd.rst
 

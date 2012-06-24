@@ -4,6 +4,6 @@ Growing Neural Networks
 .. toctree::
    :maxdepth: 1
 
-   fer-gng.h.rst
-   fer-gng-eu.h.rst
-   fer-gsrm.h.rst
+   svo-gng.h.rst
+   svo-gng-eu.h.rst
+   svo-gsrm.h.rst

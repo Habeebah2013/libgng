@@ -4,6 +4,6 @@ Planning
 .. toctree::
    :maxdepth: 1
 
-   fer-prm.h.rst
-   fer-rrt.h.rst
-   fer-gnnp.h.rst
+   svo-prm.h.rst
+   svo-rrt.h.rst
+   svo-gnnp.h.rst
