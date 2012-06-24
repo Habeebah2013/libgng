@@ -1,17 +1,17 @@
-FermatCD - Collision Detection 
+SvobodaCD - Collision Detection 
 ===============================
 
 Introduction
 -------------
-**FermatCD** is library for collision detection between arbitrary objects.
-FermatCD is being developed by `Daniel Fiser <http://www.danfis.cz>`_
-and it is part of the **fermat** library.
+**SvobodaCD** is library for collision detection between arbitrary objects.
+SvobodaCD is being developed by `Daniel Fiser <http://www.danfis.cz>`_
+and it is part of the **svoboda** library.
 
-FermatCD is fast, flexible and robust and it enables to perform a collision
+SvobodaCD is fast, flexible and robust and it enables to perform a collision
 detection between arbitrary objects composed of several primitive types
 such as box, capsule, cylinder, sphere or triangular mesh.
 
-The features of FermatCD are:
+The features of SvobodaCD are:
     - Collision primitives: sphere, box, capsule, cylinder, plane
     - Its own triangular mesh implementation faster or comparable to `OPCODE <http://www.codercorner.com/Opcode.htm>`_ or `Rapid <http://gamma.cs.unc.edu/OBB/>`_
     - Minkowski Portal Refinement (MPR) algorithm for collision detection between pair of arbitrary convex shapes that is faster than commonly used GJK (Gilbert-Johnson-Keerti) algorithm
@@ -25,14 +25,14 @@ The features of FermatCD are:
 
 Build and Install
 ------------------
-FermatCD is part of fermat library, so see build and install instructions
-of fermat library.
+SvobodaCD is part of svoboda library, so see build and install instructions
+of svoboda library.
 
 
-Use FermatCD
+Use SvobodaCD
 -------------
 This section contains several short introductionary examples explaining how
-to use FermatCD.
+to use SvobodaCD.
 
 All examples are available in *example/* director along with some test data.
 
@@ -66,13 +66,13 @@ depth of penetration.
     :language: c
     :linenos:
 
-FermatCD + ODE
+SvobodaCD + ODE
 ~~~~~~~~~~~~~~~
-An example how to integrate FermatCD into `ODE <http://www.ode.org>`_ can
+An example how to integrate SvobodaCD into `ODE <http://www.ode.org>`_ can
 be found in *examples/cd-ode.c* file.
 
 
-FermatCD API
+SvobodaCD API
 -------------
 
 Parameters
