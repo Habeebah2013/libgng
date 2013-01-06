@@ -20,68 +20,35 @@
 CFLAGS += -I.
 CFLAGS += $(BORUVKA_CFLAGS)
 CXXFLAGS += -I.
-LDFLAGS += -L. -lsvoboda -lm -lrt
+LDFLAGS += -L. -lgng -lm -lrt
 LDFLAGS += $(BORUVKA_LDFLAGS)
 
-TARGETS = libsvoboda.a
+TARGETS = libgng.a
 OBJS  = gng.o gng-eu.o gsrm.o
 OBJS += gng-t.o
-OBJS += prm.o rrt.o
-OBJS += nnbp.o
-OBJS += kohonen.o
-OBJS += gnnp.o
-OBJS += gpc.o gpc-tree.o
-OBJS += ga.o
 
 
-BIN_TARGETS  = svo-gsrm
-BIN_TARGETS += svo-plan
-
-EXAMPLE_TARGETS += nnbp-simple
-ifeq '$(USE_SDL)' 'yes'
-  ifeq '$(USE_SDL_IMAGE)' 'yes'
-    EXAMPLE_TARGETS += nnbp-img
-  endif
-endif
-
-EXAMPLE_TARGETS += ga-knapsack
-EXAMPLE_TARGETS += ga-knapsack2
-EXAMPLE_TARGETS += kohonen-simple
-EXAMPLE_TARGETS += gng-eu
-EXAMPLE_TARGETS += gng-t
-EXAMPLE_TARGETS += prm-6d
-EXAMPLE_TARGETS += gpc
+BIN_TARGETS  = gsrm
+BIN_TARGETS += gng
+BIN_TARGETS += gng-t
 
 
-OBJS 		    := $(foreach obj,$(OBJS),.objs/$(obj))
-BIN_TARGETS     := $(foreach target,$(BIN_TARGETS),bin/$(target))
-EXAMPLE_TARGETS := $(foreach target,$(EXAMPLE_TARGETS),examples/$(target))
+OBJS        := $(foreach obj,$(OBJS),.objs/$(obj))
+BIN_TARGETS := $(foreach target,$(BIN_TARGETS),bin/$(target))
 
 
-ifeq '$(EXAMPLES)' 'yes'
-  TARGETS += $(EXAMPLE_TARGETS)
-endif
-ifeq '$(BINS)' 'yes'
+ifeq '$(BIN)' 'yes'
   TARGETS += $(BIN_TARGETS)
 endif
 
 all: $(TARGETS)
 
-libsvoboda.a: $(OBJS)
+libgng.a: $(OBJS)
 	ar cr $@ $(OBJS)
 	ranlib $@
 
-bin/svo-%: bin/%-main.c libsvoboda.a
+bin/%: bin/%-main.c libgng.a
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-bin/svo-plan: bin/plan-main.o bin/cfg-map.o libsvoboda.a
-	$(CC) $(CFLAGS) $(HOOKE_CFLAGS) -o $@ $< bin/cfg-map.o $(HOOKE_LDFLAGS) $(LDFLAGS)
-bin/%.o: bin/%.c bin/%.h
-	$(CC) $(CFLAGS) $(HOOKE_CFLAGS) -c -o $@ $<
-
-examples/%: examples/%.c libsvoboda.a
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS)
-examples/nnbp-img: examples/nnbp-img.c libsvoboda.a
-	$(CC) $(CFLAGS) $(SDL_CFLAGS) $(SDL_IMAGE_CFLAGS) -o $@ $< $(LDFLAGS) $(SDL_LDFLAGS) $(SDL_IMAGE_LDFLAGS)
 
 
 .objs/%.o: src/%.c svoboda/%.h
@@ -93,14 +60,13 @@ examples/nnbp-img: examples/nnbp-img.c libsvoboda.a
 
 
 install:
-	mkdir -p $(PREFIX)/$(INCLUDEDIR)/svoboda
+	mkdir -p $(PREFIX)/$(INCLUDEDIR)/gng
 	mkdir -p $(PREFIX)/$(LIBDIR)
-	cp -r svoboda/* $(PREFIX)/$(INCLUDEDIR)/svoboda/
-	cp libsvoboda.a $(PREFIX)/$(LIBDIR)
+	cp -r gng/* $(PREFIX)/$(INCLUDEDIR)/gng/
+	cp libgng.a $(PREFIX)/$(LIBDIR)
 
 clean:
 	rm -f $(OBJS)
-	rm -f src/cfg-lexer.c src/cfg-lexer-gen.h
 	rm -f .objs/*.o
 	rm -f $(TARGETS)
 	rm -f $(BIN_TARGETS)
@@ -130,7 +96,6 @@ help:
 	@echo ""
 	@echo "Options:"
 	@echo "    CC         - Path to C compiler          (=$(CC))"
-	@echo "    CXX        - Path to C++ compiler        (=$(CXX))"
 	@echo "    M4         - Path to m4 macro processor  (=$(M4))"
 	@echo "    SED        - Path to sed(1)              (=$(SED))"
 	@echo "    PYTHON     - Path to python interpret    (=$(PYTHON))"
@@ -138,8 +103,7 @@ help:
 	@echo "    PYTHON3    - Path to python interpret v3 (=$(PYTHON3))"
 	@echo "    SCAN_BUILD - Path to scan-build          (=$(SCAN_BUILD))"
 	@echo ""
-	@echo "    EXAMPLES  'yes'/'no' - Set to 'yes' if examples should be build (=$(EXAMPLES))"
-	@echo "    BINS      'yes'/'no' - Set to 'yes' if binaries should be build (=$(BINS))"
+	@echo "    BIN  'yes'/'no' - Set to 'yes' if binaries should be build (=$(BIN))"
 	@echo ""
 	@echo "    CC_NOT_GCC 'yes'/'no' - If set to 'yes' no gcc specific options will be used (=$(CC_NOT_GCC))"
 	@echo ""
@@ -147,11 +111,6 @@ help:
 	@echo "    PROFIL     'yes'/'no' - Compiles profiling info        (=$(PROFIL))"
 	@echo "    NOWALL     'yes'/'no' - Turns off -Wall gcc option     (=$(NOWALL))"
 	@echo "    NOPEDANTIC 'yes'/'no' - Turns off -pedantic gcc option (=$(NOPEDANTIC))"
-	@echo ""
-	@echo "    USE_SDL      'yes'/'no'  - Use SDL library       (=$(USE_SDL))"
-	@echo "                               By default, auto detection is used."
-	@echo "    USE_SDL_IMAGE 'yes'/'no' - Use SDL_image library (=$(USE_SDL_IMAGE))"
-	@echo "                               By default, auto detection is used."
 	@echo ""
 	@echo "    PREFIX     - Prefix where library will be installed                             (=$(PREFIX))"
 	@echo "    INCLUDEDIR - Directory where header files will be installed (PREFIX/INCLUDEDIR) (=$(INCLUDEDIR))"
@@ -166,11 +125,5 @@ help:
 	@echo "    CONFIG_FLAGS      = $(CONFIG_FLAGS)"
 	@echo "    BORUVKA_CFLAGS    = $(BORUVKA_CFLAGS)"
 	@echo "    BORUVKA_LDFLAGS   = $(BORUVKA_LDFLAGS)"
-	@echo "    HOOKE_CFLAGS      = $(HOOKE_CFLAGS)"
-	@echo "    HOOKE_LDFLAGS     = $(HOOKE_LDFLAGS)"
-	@echo "    SDL_CFLAGS        = $(SDL_CFLAGS)"
-	@echo "    SDL_LDFLAGS       = $(SDL_LDFLAGS)"
-	@echo "    SDL_IMAGE_CFLAGS  = $(SDL_IMAGE_CFLAGS)"
-	@echo "    SDL_IMAGE_LDFLAGS = $(SDL_IMAGE_LDFLAGS)"
 
 .PHONY: all clean check check-valgrind help doc install analyze examples

@@ -15,8 +15,8 @@
  */
 
 #include <boruvka/opts.h>
-#include <svoboda/gsrm.h>
 #include <boruvka/parse.h>
+#include "gng/gsrm.h"
 
 
 #define DUMP_TRIANGLES_FN_LEN 100

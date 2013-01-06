@@ -14,9 +14,9 @@
  *  See the License for more information.
  */
 
-#include <svoboda/gsrm.h>
 #include <boruvka/alloc.h>
 #include <boruvka/dbg.h>
+#include "gng/gsrm.h"
 
 /** Print progress */
 #define PR_PROGRESS(g) \

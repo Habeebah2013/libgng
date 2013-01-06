@@ -14,9 +14,9 @@
  *  See the License for more information.
  */
 
-#include <svoboda/gng-t.h>
 #include <boruvka/dbg.h>
 #include <boruvka/alloc.h>
+#include "gng/gng-t.h"
 
 static void svoGNGTHebbianLearning(svo_gngt_t *gng,
                                    svo_gngt_node_t *n1,

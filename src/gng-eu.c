@@ -15,11 +15,11 @@
  */
 
 #include <stdio.h>
-#include <svoboda/gng-eu.h>
 #include <boruvka/nearest-linear.h>
 #include <boruvka/vec3.h>
 #include <boruvka/alloc.h>
 #include <boruvka/dbg.h>
+#include "gng/gng-eu.h"
 
 /** Operations for svo_gng_ops_t struct */
 static svo_gng_eu_node_t *svoGNGEuNodeNew(svo_gng_eu_t *gng, const bor_vec_t *is);

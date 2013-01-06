@@ -2,11 +2,11 @@
 #include <signal.h>
 #include <boruvka/dbg.h>
 #include <boruvka/timer.h>
-#include <svoboda/gng-t.h>
 #include <boruvka/pc.h>
 #include <boruvka/gug.h>
 #include <boruvka/alloc.h>
 #include <boruvka/vec3.h>
+#include "gng/gng-t.h"
 
 struct _node_t {
     svo_gngt_node_t node;

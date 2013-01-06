@@ -14,9 +14,9 @@
  *  See the License for more information.
  */
 
-#include <svoboda/gng.h>
 #include <boruvka/alloc.h>
 #include <boruvka/dbg.h>
+#include "gng/gng.h"
 
 
 /** Should return true if n1 > n2 - this is used for err-heap */

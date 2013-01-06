@@ -15,7 +15,6 @@
 ##
 
 CC ?= gcc
-CXX ?= g++
 M4 ?= m4
 SED ?= sed
 FLEX ?= flex
@@ -56,70 +55,27 @@ endif
 
 ifeq '$(DEBUG)' 'yes'
   CFLAGS = -g
-  CXXFLAGS = -g
   CONFIG_FLAGS += -DDEBUG
 else
   # force to use optimizations
   CFLAGS += -O3
-  CXXFLAGS += -O3
 endif
 ifeq '$(PROFIL)' 'yes'
   CFLAGS += -pg
-  CXXFLAGS += -pg
 endif
 
 ifneq '$(NOWALL)' 'yes'
   CFLAGS += -Wall
-  CXXFLAGS += -Wall
   ifeq '$(DEBUG)' 'yes'
     CFLAGS   += -Wno-unused-function
-    CXXFLAGS += -Wno-unused-function
   endif
 endif
 ifneq '$(NOPEDANTIC)' 'yes'
   CFLAGS += -pedantic
-  CXXFLAGS += -pedantic
-endif
-
-USE_SDL    ?= auto
-USE_SDL_IMAGE ?= auto
-
-ifeq '$(USE_SDL)' 'auto'
-  ifeq '$(SDL_CFLAGS)' ''
-    USE_SDL = $(shell if pkg-config sdl --exists; then echo 'yes'; else echo 'no'; fi)
-  else
-    USE_SDL = yes
-  endif
-
-SDL_CFLAGS  ?= $(shell pkg-config sdl --cflags)
-SDL_LDFLAGS ?= $(shell pkg-config sdl --libs)
-endif
-
-ifeq '$(USE_SDL)' 'auto'
-  ifeq '$(SDL_CFLAGS)' ''
-    USE_SDL = $(shell if pkg-config sdl --exists; then echo 'yes'; else echo 'no'; fi)
-  else
-    USE_SDL = yes
-  endif
-
-SDL_CFLAGS  ?= $(shell pkg-config sdl --cflags)
-SDL_LDFLAGS ?= $(shell pkg-config sdl --libs)
-endif
-
-ifeq '$(USE_SDL_IMAGE)' 'auto'
-  ifeq '$(SDL_IMAGE_CFLAGS)' ''
-    USE_SDL_IMAGE = $(shell if pkg-config SDL_image --exists; then echo 'yes'; else echo 'no'; fi)
-  else
-    USE_SDL_IMAGE = yes
-  endif
-
-SDL_IMAGE_CFLAGS  ?= $(shell pkg-config SDL_image --cflags)
-SDL_IMAGE_LDFLAGS ?= $(shell pkg-config SDL_image --libs)
 endif
 
 
-EXAMPLES ?= no
-BINS     ?= yes
+BIN ?= yes
 
 
 ifneq '$(CC_NOT_GCC)' 'yes'
@@ -130,9 +86,6 @@ LDFLAGS += $(SYSTEM_LDFLAGS)
 
 BORUVKA_CFLAGS ?=
 BORUVKA_LDFLAGS ?= -lboruvka
-
-HOOKE_CFLAGS ?=
-HOOKE_LDFLAGS ?= -lhooke
 
 PYTHON_CFLAGS  ?= $(shell $(PYTHON_CONFIG) --includes)
 PYTHON_LDFLAGS ?= $(shell $(PYTHON_CONFIG) --libs)

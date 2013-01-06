@@ -14,9 +14,9 @@
  *  See the License for more information.
  */
 
-#include <svoboda/gng.h>
 #include <boruvka/alloc.h>
 #include <boruvka/dbg.h>
+#include "gng/gng.h"
 
 /**
  * Here is implemented Growing Neural Gas algorithm  completely in static

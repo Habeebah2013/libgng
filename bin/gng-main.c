@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <boruvka/dbg.h>
 #include <boruvka/timer.h>
-#include <svoboda/gng-eu.h>
+#include "gng/gng-eu.h"
 
 size_t max_nodes;
 svo_gng_eu_t *gng;
